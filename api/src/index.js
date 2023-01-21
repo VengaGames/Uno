@@ -12,6 +12,9 @@ app.get("/", async (req, res) => {
   return res.status(200).send({ message: "Hello world", last_deployed_at: new Date().toLocaleString() });
 });
 
+app.use("/room", require("./controllers/room"));
+app.use("/cards", require("./controllers/cards"));
+
 const server = http.createServer(app);
 connectToIoServer(server);
 

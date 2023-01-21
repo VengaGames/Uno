@@ -1,5 +1,6 @@
 const { Server } = require("socket.io");
-const { addUser, removeUser, getUsersInRoom } = require("./utils/users");
+const { drawOne, setDefaultCard } = require("./utils/cards");
+const { addUser, removeUser, getUsersInRoom, setCurrentPlayerTurn, getCurrentPlayerTurn } = require("./utils/users");
 
 exports.connectToIoServer = (server) => {
   const io = new Server(server, {
@@ -13,15 +14,22 @@ exports.connectToIoServer = (server) => {
     socket.on("join", ({ name, room }, callback) => {
       try {
         const { user } = addUser({ id: socket.id, name, room });
-        if (!user) return;
-
-        console.log(`${user.name} joined ${user.room}`);
+        if (!user) return { error: "User already exists", code: 400 };
 
         socket.join(user.room);
 
+        const usersInRoom = getUsersInRoom(user.room);
+
+        if (usersInRoom.length === 1) {
+          const card = drawOne();
+          setDefaultCard(card, room);
+          socket.emit("draw-first-card", { card: card });
+          setCurrentPlayerTurn(user.id, user.room);
+        }
+
         io.to(user.room).emit("roomData", {
           room: user.room,
-          users: getUsersInRoom(user.room),
+          users: usersInRoom,
         });
         if (callback) callback();
       } catch (e) {
@@ -29,14 +37,17 @@ exports.connectToIoServer = (server) => {
       }
     });
 
-    require("./controllers/youtube").handleSocket(socket, io);
+    require("./controllers/cards").handleSocket(socket, io);
     require("./controllers/room").handleSocket(socket, io);
 
     socket.on("disconnect", () => {
       try {
         const user = removeUser(socket.id);
         if (!user) return;
-        console.log(`${user.name} left ${user.room}`);
+
+        const usersInRoom = getUsersInRoom(user.room);
+        setCurrentPlayerTurn(usersInRoom[0].id, user.room);
+
         io.to(user.room).emit("roomData", {
           room: user.room,
           users: getUsersInRoom(user.room),

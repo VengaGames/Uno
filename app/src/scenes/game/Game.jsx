@@ -14,32 +14,43 @@ const Login = () => {
     room: query.get("room"),
   };
   const [loading, setLoading] = useState(false);
+  const [deck, setDeck] = useState([]);
+  const [actualCard, setActualCard] = useState(null);
+  const [playerToPlay, setPlayerToPlay] = useState(null);
 
   const [users, setUsers] = useState([]);
 
   useEffect(() => {
     if (!isConnected) return;
+    // initUser
     const { name, room } = roomData;
-    socket.emit("join", { name, room }, () => {
-      getSettings();
+    socket.emit("join", { name, room }, (error) => {
+      if (error) {
+        alert(error);
+      }
+      getDefaultCard(room);
+      getCurrentPlayer(room);
     });
-    socket.on("roomData", ({ users }) => {
-      setUsers(users);
+    socket.on("roomData", ({ users }) => setUsers(users));
+    socket.emit("draw-cards", 7);
+    socket.on("the-cards", (cards) => setDeck(cards));
+    socket.on("draw-first-card", ({ card }) => setActualCard(card));
+
+    socket.on("the-card", (card) => setDeck((prev) => [...prev, card]));
+    socket.on("played-card", ({ card }) => setActualCard(card));
+    socket.on("next-player-to-play", (user) => {
+      setPlayerToPlay(user);
+    });
+
+    socket.on("player-left", () => {
+      getCurrentPlayer(room);
+      console.log("player-left");
     });
 
     return () => {
       socket.emit("leave-room");
     };
   }, [isConnected]);
-
-  useEffect(() => {
-    if (!isConnected) return;
-    if (selectedVideo) {
-      socket.emit("select-video", selectedVideo);
-    } else {
-      socket.emit("select-video", null);
-    }
-  }, [selectedVideo, isConnected]);
 
   if (!isConnected)
     return (
@@ -48,21 +59,63 @@ const Login = () => {
         <RiLoader2Fill className="animate-spin text-7xl" />
       </div>
     );
+  const getDefaultCard = async (room) => {
+    const { data } = await API.get(`/cards/default/${room}`);
+    setActualCard(data);
+  };
+  const getCurrentPlayer = async (room) => {
+    const { data } = await API.get(`/room/current/${room}`);
+    setPlayerToPlay(data);
+  };
+  const playCard = (card) => {
+    console.log(playerToPlay?.id, socket.id);
+    if (playerToPlay?.id !== socket.id) return;
+    // verify if card is playable
+    if (card.color !== actualCard.color && card.value !== actualCard.value) return;
+    socket.emit("play-card", card);
+    socket.emit("next-turn");
+    setActualCard(card);
+    setDeck((prev) => prev.filter((c) => c.id !== card.id));
+  };
+
+  const drawCard = () => {
+    if (playerToPlay?.id !== socket.id) return;
+    socket.emit("draw-card");
+  };
+
+  const sortCards = () => {
+    setDeck((prev) => {
+      const sorted = prev.sort((a, b) => {
+        if (a.color === b.color) {
+          return a.value - b.value;
+        }
+        return a.color.localeCompare(b.color);
+      });
+      return [...sorted];
+    });
+  };
 
   return (
-    <Wrapper roomData={roomData} users={users}>
+    <Wrapper roomData={roomData} users={users} whosTurn={playerToPlay}>
       <div>Jeu</div>
+      <div className="flex gap-6">
+        {actualCard && <Card card={actualCard} />}
+        <Card card={{ color: "grey", value: "Pioche" }} onClick={() => drawCard()} />
+      </div>
+      <div className="flex mt-24 gap-6">
+        <button onClick={() => sortCards()}>Trier</button>
+      </div>
+      <div className="flex max-w-xl flex-wrap flex-row gap-2">
+        {deck.map((card) => (
+          <Card onClick={() => playCard(card)} key={card.id} card={card} />
+        ))}
+      </div>
     </Wrapper>
   );
 };
 
-const ConnectedPlayers = ({ players }) => {
+const ConnectedPlayers = ({ players, whosTurn }) => {
   const [showPlayers, setShowPlayers] = useState(true);
-  players.sort((a, b) => {
-    if (a.videoSelected && !b.videoSelected) return -1;
-    if (!a.videoSelected && b.videoSelected) return 1;
-    return 0;
-  });
   players.sort((a, b) => {
     a.name.localeCompare(b.name);
   });
@@ -79,7 +132,7 @@ const ConnectedPlayers = ({ players }) => {
           {players.map((player) => (
             <div key={player.id} className="flex gap-2">
               {player.admin && <MdOutlineAdminPanelSettings className="text-red-500" />}
-              <div className={`${player.videoSelected ? "text-green-500" : "text-black"}`}>{player.name}</div>
+              <div className={`${player.id === whosTurn?.id ? "text-green-500" : "text-black"}`}>{player.name}</div>
             </div>
           ))}
         </div>
@@ -90,18 +143,42 @@ const ConnectedPlayers = ({ players }) => {
   );
 };
 
-const Wrapper = ({ children, roomData, users }) => {
+const Card = ({ card, onClick }) => {
+  const getColor = (color) => {
+    switch (color) {
+      case "red":
+        return "bg-red-500 border-red-500";
+      case "blue":
+        return "bg-blue-500 border-blue-500";
+      case "green":
+        return "bg-green-500 border-green-500";
+      case "yellow":
+        return "bg-yellow-500 border-yellow-500";
+      case "grey":
+        return "bg-gray-500 border-gray-500";
+      default:
+        return "bg-black border-black";
+    }
+  };
+  return (
+    <div onClick={() => onClick()} className={`p-3 hover:animate-bounce cursor-pointer border rounded ${getColor(card.color)}`}>
+      {card.value}
+    </div>
+  );
+};
+
+const Wrapper = ({ children, roomData, users, whosTurn }) => {
   return (
     <div className="w-full h-full flex flex-col items-center justify-center p-3">
       <div className="flex mb-4 flex-row justify-between items-center w-full">
-        <NavLink to="/login" end>
+        <NavLink to="/" end>
           <HiArrowLeft className="transition min-w-[32px] min-h-[32px] ease-in-out delay-150 hover:-translate-y-1 hover:scale-110 duration-300" alt="icone fleche retour" />
         </NavLink>
 
         <h1 className="flex items-center">Room : {roomData.room}</h1>
         <div />
       </div>
-      <ConnectedPlayers players={users} />
+      <ConnectedPlayers players={users} whosTurn={whosTurn} />
       <div className="flex items-center flex-col w-full p-3">{children}</div>
     </div>
   );

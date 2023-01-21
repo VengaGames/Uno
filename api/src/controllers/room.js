@@ -1,12 +1,20 @@
 const express = require("express");
 const router = express.Router();
-const { getRooms, removeUser, getUser, getUsersInRoom } = require("../utils/users");
-const { getSettings, setSettings } = require("../utils/settings");
+const { getRooms, removeUser, getUsersInRoom, getCurrentPlayerTurn } = require("../utils/users");
 
 router.get("/", async (req, res) => {
   try {
     const rooms = getRooms();
     res.status(200).send({ data: rooms, ok: true });
+  } catch (e) {
+    console.log(e);
+    res.status(500).send({ message: e.message, ok: false });
+  }
+});
+router.get("/current/:room", async (req, res) => {
+  try {
+    const currentPlayer = getCurrentPlayerTurn(req.params.room);
+    res.status(200).send({ data: currentPlayer, ok: true });
   } catch (e) {
     console.log(e);
     res.status(500).send({ message: e.message, ok: false });
@@ -23,12 +31,10 @@ roomController.handleSocket = (socket, io) => {
 
       io.to(user.room).emit("roomData", {
         room: user.room,
-        users: getUsersInRoom(user.room),
+        users: usersInRoom,
       });
 
-      if (usersInRoom.every((user) => user.videoSelected)) {
-        io.to(user.room).emit("all-videos-selected", true);
-      }
+      io.to(user.room).emit("player-left");
     } catch (error) {
       console.log(error);
     }
