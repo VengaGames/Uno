@@ -135,7 +135,7 @@ const Login = () => {
         {actualCard && <Card card={actualCard} />}
         <Card card={{ color: "grey", value: "Pioche" }} onClick={() => drawCard()} />
       </div>
-      {deck.length === 0 ? (
+      {deck.length !== 0 ? (
         <div className="flex mt-24">
           <button onClick={() => sortCards()}>Trier</button>
         </div>
