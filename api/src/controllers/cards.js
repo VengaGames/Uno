@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { getRooms, removeUser, getUser, getUsersInRoom } = require("../utils/users");
+const { getRooms, modifyUser, getUser, getUsersInRoom } = require("../utils/users");
 const { drawOne, drawMany, getDefaultCard } = require("../utils/cards");
 
 router.get("/default/:room", async (req, res) => {
@@ -49,6 +49,16 @@ roomController.handleSocket = (socket, io) => {
     try {
       const user = getUser(socket.id);
       socket.broadcast.to(user.room).emit("played-card", { card: card });
+    } catch (error) {
+      console.log(error);
+    }
+  });
+  socket.on("card-numbers", (num) => {
+    try {
+      const user = getUser(socket.id);
+      const usersInRoom = getUsersInRoom(user.room);
+      modifyUser(socket.id, "cardsNb", num);
+      io.to(user.room).emit("roomData", { users: usersInRoom });
     } catch (error) {
       console.log(error);
     }

@@ -44,13 +44,20 @@ const Login = () => {
 
     socket.on("player-left", () => {
       getCurrentPlayer(room);
-      console.log("player-left");
     });
+    window.onbeforeunload = function () {
+      return "Data will be lost if you leave the page, are you sure?";
+    };
 
     return () => {
       socket.emit("leave-room");
     };
   }, [isConnected]);
+
+  useEffect(() => {
+    if (!isConnected) return;
+    socket.emit("card-numbers", deck.length);
+  }, [deck]);
 
   if (!isConnected)
     return (
@@ -68,8 +75,7 @@ const Login = () => {
     setPlayerToPlay(data);
   };
   const playCard = (card) => {
-    console.log(playerToPlay?.id, socket.id);
-    if (playerToPlay?.id !== socket.id) return;
+    if (isYourTurn()) return;
     // verify if card is playable
     if (card.color !== actualCard.color && card.value !== actualCard.value) return;
     socket.emit("play-card", card);
@@ -79,8 +85,12 @@ const Login = () => {
   };
 
   const drawCard = () => {
-    if (playerToPlay?.id !== socket.id) return;
+    if (isYourTurn()) return;
     socket.emit("draw-card");
+  };
+
+  const isYourTurn = () => {
+    return playerToPlay?.id === socket.id && !(users.length > 1);
   };
 
   const sortCards = () => {
@@ -133,6 +143,7 @@ const ConnectedPlayers = ({ players, whosTurn }) => {
             <div key={player.id} className="flex gap-2">
               {player.admin && <MdOutlineAdminPanelSettings className="text-red-500" />}
               <div className={`${player.id === whosTurn?.id ? "text-green-500" : "text-black"}`}>{player.name}</div>
+              {player.cardsNb && <div className="text-black">{player.cardsNb}</div>}
             </div>
           ))}
         </div>

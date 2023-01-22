@@ -65,7 +65,6 @@ function setCurrentPlayerTurn(userId, room) {
 }
 
 function getCurrentPlayerTurn(room) {
-  console.log("getCurrentPlayerTurn", room, currentPlayer);
   const id = currentPlayer.find((player) => player.room === room)?.id;
   if (!id) return null;
   return getUser(id);
