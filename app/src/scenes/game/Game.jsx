@@ -66,14 +66,17 @@ const Login = () => {
         <RiLoader2Fill className="animate-spin text-7xl" />
       </div>
     );
+
   const getDefaultCard = async (room) => {
     const { data } = await API.get(`/cards/default/${room}`);
     setActualCard(data);
   };
+
   const getCurrentPlayer = async (room) => {
     const { data } = await API.get(`/room/current/${room}`);
     setPlayerToPlay(data);
   };
+
   const playCard = (card) => {
     if (isYourTurn()) return;
     // verify if card is playable
