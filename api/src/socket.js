@@ -1,5 +1,5 @@
 const { Server } = require("socket.io");
-const { drawOne, setDefaultCard } = require("./utils/cards");
+const { drawOne, setDefaultCard, getDefaultCard } = require("./utils/cards");
 const { addUser, removeUser, getUsersInRoom, setCurrentPlayerTurn, getCurrentPlayerTurn } = require("./utils/users");
 
 exports.connectToIoServer = (server) => {
@@ -14,17 +14,18 @@ exports.connectToIoServer = (server) => {
     socket.on("join", ({ name, room }, callback) => {
       try {
         const { user } = addUser({ id: socket.id, name, room });
-        if (!user) return { error: "User already exists", code: 400 };
+        if (!user) return { error: "User already exists", code: 400, ok: false };
 
         socket.join(user.room);
 
         const usersInRoom = getUsersInRoom(user.room);
 
         if (usersInRoom.length === 1) {
-          const card = drawOne();
-          setDefaultCard(card, room);
+          setDefaultCard(room);
+          const card = getDefaultCard(room);
           socket.emit("draw-first-card", { card: card });
           setCurrentPlayerTurn(user.id, user.room);
+          socket.emit("next-player-to-play", getCurrentPlayerTurn(user.room));
         }
 
         io.to(user.room).emit("roomData", {
@@ -47,6 +48,7 @@ exports.connectToIoServer = (server) => {
 
         const usersInRoom = getUsersInRoom(user.room);
         setCurrentPlayerTurn(usersInRoom[0].id, user.room);
+        socket.broadcast.to(user.room).emit("next-player-to-play", getCurrentPlayerTurn(user.room));
 
         io.to(user.room).emit("roomData", {
           room: user.room,

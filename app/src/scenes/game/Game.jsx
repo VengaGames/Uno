@@ -5,6 +5,7 @@ import { MdOutlineAdminPanelSettings } from "react-icons/md";
 import { HiArrowLeft } from "react-icons/hi";
 import useSocket from "../../hooks/socket";
 import { RiLoader2Fill } from "react-icons/ri";
+import toast from "react-hot-toast";
 
 const Login = () => {
   const query = new URLSearchParams(window.location.search);
@@ -45,6 +46,11 @@ const Login = () => {
     socket.on("player-left", () => {
       getCurrentPlayer(room);
     });
+
+    socket.on("player-won", ({ user }) => {
+      alert(`${user.name} a gagné !`);
+    });
+
     window.onbeforeunload = function () {
       return "Data will be lost if you leave the page, are you sure?";
     };
@@ -57,6 +63,9 @@ const Login = () => {
   useEffect(() => {
     if (!isConnected) return;
     socket.emit("card-numbers", deck.length);
+    if (deck.length === 0) {
+      socket.emit("winner");
+    }
   }, [deck]);
 
   if (!isConnected)
@@ -93,7 +102,12 @@ const Login = () => {
   };
 
   const isYourTurn = () => {
-    return playerToPlay?.id === socket.id && !(users.length > 1);
+    if (!playerToPlay) return false;
+
+    if (playerToPlay?.id !== socket.id) toast.error("Ce n'est pas votre tour !");
+    if (users.length === 1) toast.error("Vous êtes seul dans la partie !");
+
+    return playerToPlay?.id !== socket.id || !(users.length > 1);
   };
 
   const sortCards = () => {
@@ -108,6 +122,12 @@ const Login = () => {
     });
   };
 
+  const playAgain = () => {
+    socket.emit("play-again", () => {
+      socket.emit("get-default-card");
+    });
+  };
+
   return (
     <Wrapper roomData={roomData} users={users} whosTurn={playerToPlay}>
       <div>Jeu</div>
@@ -115,9 +135,15 @@ const Login = () => {
         {actualCard && <Card card={actualCard} />}
         <Card card={{ color: "grey", value: "Pioche" }} onClick={() => drawCard()} />
       </div>
-      <div className="flex mt-24 gap-6">
-        <button onClick={() => sortCards()}>Trier</button>
-      </div>
+      {deck.length === 0 ? (
+        <div className="flex mt-24">
+          <button onClick={() => sortCards()}>Trier</button>
+        </div>
+      ) : (
+        <div onClick={() => playAgain()} className="flex mt-24 text-2xl border rounded border-black p-5 cursor-pointer">
+          Rejouer ?
+        </div>
+      )}
       <div className="flex max-w-xl flex-wrap flex-row gap-2">
         {deck.map((card) => (
           <Card onClick={() => playCard(card)} key={card.id} card={card} />
@@ -175,7 +201,7 @@ const Card = ({ card, onClick }) => {
     }
   };
   return (
-    <div onClick={() => onClick()} className={`p-3 hover:animate-bounce cursor-pointer border rounded ${getColor(card.color)}`}>
+    <div onClick={() => onClick()} className={`p-3 hover:animate-bounce select-text cursor-pointer border rounded ${getColor(card.color)}`}>
       {card.value}
     </div>
   );

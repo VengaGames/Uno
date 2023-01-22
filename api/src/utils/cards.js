@@ -109,7 +109,9 @@ const drawMany = (num) => {
   return cards;
 };
 
-const setDefaultCard = (card, room) => {
+const setDefaultCard = (room) => {
+  defaultCard = defaultCard.filter((card) => card.room !== room);
+  const card = drawOne();
   defaultCard.push({ ...card, id: uuidv4(), room: room });
   return defaultCard;
 };

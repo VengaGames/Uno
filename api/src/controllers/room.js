@@ -11,10 +11,27 @@ router.get("/", async (req, res) => {
     res.status(500).send({ message: e.message, ok: false });
   }
 });
+
 router.get("/current/:room", async (req, res) => {
   try {
     const currentPlayer = getCurrentPlayerTurn(req.params.room);
     res.status(200).send({ data: currentPlayer, ok: true });
+  } catch (e) {
+    console.log(e);
+    res.status(500).send({ message: e.message, ok: false });
+  }
+});
+
+router.get("/name/available", async (req, res) => {
+  try {
+    const { name, room } = req.query;
+    const users = getUsersInRoom(room);
+    const isAvailable = users.every((user) => user.name !== name);
+    if (isAvailable) {
+      res.status(200).send({ ok: true });
+    } else {
+      res.status(200).send({ message: "Nom déjà pris !", ok: false });
+    }
   } catch (e) {
     console.log(e);
     res.status(500).send({ message: e.message, ok: false });

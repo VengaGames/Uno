@@ -9,19 +9,23 @@ const Login = () => {
   const [rooms, setRooms] = useState([]);
 
   const getRooms = async () => {
-    const res = await API.get("/room");
-    if (!res.ok) return console.log(res);
-    setRooms(res.data);
+    const { data } = await API.get("/room");
+    setRooms(data);
   };
 
   useEffect(() => {
     getRooms();
   }, []);
 
-  const handlesubmit = (e) => {
+  const handlesubmit = async (e) => {
     e.preventDefault();
     const room = e.target.elements.room.value;
     const name = e.target.elements.name.value;
+    const { ok } = await API.get(`/room/name/available?room=${room}&name=${name}`);
+    if (!ok) {
+      alert("Nom de room ou de joueur déjà pris");
+      return;
+    }
     navigate(`/game?room=${room}&name=${name}`);
   };
   return (
