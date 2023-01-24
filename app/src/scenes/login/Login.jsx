@@ -30,12 +30,9 @@ const Login = () => {
   };
   return (
     <div>
-      <NavLink to="/" end>
-        <HiArrowLeft className="w-10 h-10 transition ease-in-out hover:-translate-y-1 hover:scale-110 duration-300 ..." alt="icone fleche retour" />
-      </NavLink>
-      <div className="w-full h-full flex flex-col items-center justify-center">
+      <div className="w-full h-full flex flex-col items-center justify-center mt-24">
         <div className="bg-white justify-center flex flex-col border rounded-lg border-gray-500 items-center shadow-2xl w-3/4 md:w-1/4">
-          <h1 className="mt-5 text-xl font-semibold">Le Jeu de la Playlist</h1>
+          <h1 className="mt-5 text-xl font-semibold">Uno !</h1>
           <form onSubmit={handlesubmit} className="flex flex-col">
             <label className="ml-2.5 mt-2.5" htmlFor="room">
               Room
@@ -49,7 +46,7 @@ const Login = () => {
               name="room"
               id="room"
               onInvalid={(e) => {
-                e.target.setCustomValidity("Choisis un nom de salle !");
+                e.target.setCustomValidity("Choisis une salle !");
               }}
             />
             <label className="ml-2.5 mt-2.5" htmlFor="name">
