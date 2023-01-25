@@ -44,6 +44,7 @@ roomController.handleSocket = (socket, io) => {
   socket.on("leave-room", () => {
     try {
       const user = removeUser(socket.id);
+      if (!user) return;
       const usersInRoom = getUsersInRoom(user.room);
 
       io.to(user.room).emit("roomData", {

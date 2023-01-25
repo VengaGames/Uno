@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { getRooms, modifyUser, getUser, getUsersInRoom } = require("../utils/users");
-const { drawOne, drawMany, getDefaultCard, setDefaultCard } = require("../utils/cards");
+const { drawOne, drawMany, getDefaultCard, setDefaultCard, getDirection, setDirection } = require("../utils/cards");
 
 router.get("/default/:room", async (req, res) => {
   try {
@@ -20,9 +20,15 @@ roomController.handleSocket = (socket, io) => {
     try {
       const user = getUser(socket.id);
       const usersInRoom = getUsersInRoom(user.room);
+      let way;
+      if (getDirection(user.room) === "conter-clockwise") {
+        way = -1;
+      } else {
+        way = 1;
+      }
 
-      const nextUserIndex = usersInRoom.findIndex((user) => user.id === socket.id) + 1;
-      const nextUser = usersInRoom[nextUserIndex % usersInRoom.length];
+      const nextUserIndex = usersInRoom.findIndex((user) => user.id === socket.id) + way;
+      const nextUser = usersInRoom[((nextUserIndex % usersInRoom.length) + usersInRoom.length) % usersInRoom.length];
 
       io.to(user.room).emit("next-player-to-play", nextUser);
     } catch (error) {
@@ -45,10 +51,19 @@ roomController.handleSocket = (socket, io) => {
       console.log(error);
     }
   });
-  socket.on("play-card", (card) => {
+  socket.on("play-card", ({ card }, callback) => {
     try {
       const user = getUser(socket.id);
       socket.broadcast.to(user.room).emit("played-card", { card: card });
+      if (card.value === "reverse") {
+        io.to(user.room).emit("reverse");
+        if (!getDirection(user.room)) {
+          setDirection(user.room, "conter-clockwise");
+        } else {
+          getDirection(user.room) === "clockwise" ? setDirection(user.room, "conter-clockwise") : setDirection(user.room, "clockwise");
+        }
+      }
+      if (callback) callback();
     } catch (error) {
       console.log(error);
     }

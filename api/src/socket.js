@@ -47,6 +47,7 @@ exports.connectToIoServer = (server) => {
         if (!user) return;
 
         const usersInRoom = getUsersInRoom(user.room);
+        if (usersInRoom.length === 0) return;
         setCurrentPlayerTurn(usersInRoom[0].id, user.room);
         socket.broadcast.to(user.room).emit("next-player-to-play", getCurrentPlayerTurn(user.room));
 

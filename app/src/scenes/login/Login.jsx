@@ -86,9 +86,9 @@ const Login = () => {
           </div>
         ) : null}
       </div>
-      <div className="fixed bottom-0 flex justify-center w-full">
+      {/* <div className="fixed bottom-0 flex justify-center w-full">
         <h3> Vengaboys © - 2023</h3>
-      </div>
+      </div> */}
     </div>
   );
 };
