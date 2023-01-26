@@ -9,6 +9,8 @@
 
 body {
   font-family: "Roboto", sans-serif;
-  background: #ffffff;
+  background: url("https://static.vecteezy.com/system/resources/previews/002/082/622/large_2x/poker-background-with-playing-cards-and-chips-on-green-casino-background-modern-poker-widescreen-wallpaper-vector.jpg");
+  background-size: cover;
+  background-repeat: no-repeat;
   overflow-x: hidden;
 }

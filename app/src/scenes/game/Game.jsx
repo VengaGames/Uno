@@ -203,17 +203,17 @@ const Card = ({ card, onClick = () => {}, type = "not-card" }) => {
   const getColor = (color) => {
     switch (color) {
       case "red":
-        return "bg-red-500 border-red-500";
+        return "bg-[#D72600]";
       case "blue":
-        return "bg-blue-500 border-blue-500";
+        return "bg-[#0956BF]";
       case "green":
-        return "bg-green-500 border-green-500";
+        return "bg-[#379711]";
       case "yellow":
-        return "bg-yellow-500 border-yellow-500";
+        return "bg-[#ECD407]";
       case "grey":
-        return "bg-gray-500 border-gray-500";
+        return "bg-gray-500";
       default:
-        return "bg-black border-black";
+        return "bg-black";
     }
   };
   const getCardValue = (value) => {
@@ -236,8 +236,8 @@ const Card = ({ card, onClick = () => {}, type = "not-card" }) => {
     <div
       onClick={() => onClick()}
       className={`${type === "card" ? "hover:scale-150 transition ease-in-out " : ""} ${
-        type === "pioche" ? "p-3" : " w-[35px] h-[50px] "
-      } flex items-center justify-center cursor-pointer border rounded ${getColor(card.color)}`}>
+        type === "pioche" ? "p-3" : " w-[48px] h-[75px] "
+      } flex items-center justify-center cursor-pointer border-2 border-white rounded ${getColor(card.color)}`}>
       {getCardValue(card.value)}
     </div>
   );

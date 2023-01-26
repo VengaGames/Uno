@@ -71,6 +71,7 @@ roomController.handleSocket = (socket, io) => {
   socket.on("card-numbers", (num) => {
     try {
       const user = getUser(socket.id);
+      if (!user) return;
       const usersInRoom = getUsersInRoom(user.room);
       modifyUser(socket.id, "cardsNb", num);
       io.to(user.room).emit("roomData", { users: usersInRoom });
