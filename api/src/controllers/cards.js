@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { getRooms, modifyUser, getUser, getUsersInRoom } = require("../utils/users");
-const { drawOne, drawMany, getDefaultCard, setDefaultCard, getDirection, setDirection } = require("../utils/cards");
+const { drawOne, drawMany, getDefaultCard, setDefaultCard, getDirection, setDirection, getStack, setStack } = require("../utils/cards");
 
 router.get("/default/:room", async (req, res) => {
   try {
@@ -56,14 +56,30 @@ roomController.handleSocket = (socket, io) => {
       const user = getUser(socket.id);
       socket.broadcast.to(user.room).emit("played-card", { card: card });
       if (card.value === "reverse") {
-        io.to(user.room).emit("reverse");
         if (!getDirection(user.room)) {
           setDirection(user.room, "conter-clockwise");
         } else {
           getDirection(user.room) === "clockwise" ? setDirection(user.room, "conter-clockwise") : setDirection(user.room, "clockwise");
         }
+        io.to(user.room).emit("reverse");
       }
+      if (card.value === "draw2" || card.value === "draw4") {
+        const num = card.value === "draw2" ? 2 : 4;
+        if (!getStack(user.room)) setStack(user.room, num);
+        else setStack(user.room, getStack(user.room) + num);
+        io.to(user.room).emit("draw-multiple", { stack: getStack(user.room) });
+      }
+
       if (callback) callback();
+    } catch (error) {
+      console.log(error);
+    }
+  });
+  socket.on("reset-stack", () => {
+    try {
+      const user = getUser(socket.id);
+      setStack(user.room, null);
+      io.to(user.room).emit("draw-multiple", { stack: null });
     } catch (error) {
       console.log(error);
     }

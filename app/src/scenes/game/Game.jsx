@@ -41,12 +41,24 @@ const Login = () => {
     socket.on("draw-first-card", ({ card }) => setActualCard(card));
 
     socket.on("the-card", (card) => setDeck((prev) => [...prev, card]));
-    socket.on("played-card", ({ card }) => setActualCard(card));
+    socket.on("played-card", ({ card, stack }) => {
+      setActualCard(card);
+      if (card.value === "skip") socket.emit("next-turn");
+    });
     socket.on("next-player-to-play", (user) => {
       setGameInfo((prev) => ({ ...prev, playerToPlay: user }));
     });
     socket.on("reverse", () => {
       setGameInfo((prev) => ({ ...prev, direction: prev.direction === "clockwise" ? "counter-clockwise" : "clockwise" }));
+    });
+
+    socket.on("draw-multiple", ({ stack, type }) => {
+      setGameInfo((prev) => ({ ...prev, stack: stack }));
+      if (!deck.map((c) => c.value).includes(type) && gameInfo.playerToPlay?.id === socket.id && stack !== null) {
+        socket.emit("draw-cards", stack);
+        socket.emit("next-turn");
+        socket.emit("reset-stack");
+      }
     });
 
     socket.on("player-left", () => {
@@ -105,6 +117,7 @@ const Login = () => {
   };
 
   const verifyCard = (card) => {
+    if (card.color === "black") return false;
     if (card.color === actualCard.color || card.value === actualCard.value) return false;
     return true;
   };
@@ -219,15 +232,15 @@ const Card = ({ card, onClick = () => {}, type = "not-card" }) => {
   const getCardValue = (value) => {
     switch (value) {
       case "reverse":
-        return <FaExchangeAlt className="text-black -rotate-45 text-xl" />;
+        return <FaExchangeAlt className="text-black -rotate-45 text-2xl" />;
       case "skip":
-        return <RiForbid2Line className="text-black text-xl" />;
+        return <RiForbid2Line className="text-black text-2xl" />;
       case "draw2":
-        return <MdExposurePlus2 className="text-black text-xl" />;
+        return <MdExposurePlus2 className="text-black text-2xl" />;
       case "draw4":
-        return "+4";
+        return <div className="text-white text-2">+4</div>;
       case "wild":
-        return <IoIosColorFilter className="text-black text-xl" />;
+        return <IoIosColorFilter className="text-black text-2xl" />;
       default:
         return value;
     }

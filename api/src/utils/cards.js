@@ -20,9 +20,9 @@ const cards = [
   { color: "red", value: 7 },
   { color: "red", value: 8 },
   { color: "red", value: 9 },
-  //   { color: "red", value: "skip" },
+  { color: "red", value: "skip" },
   { color: "red", value: "reverse" },
-  //   { color: "red", value: "draw2" },
+  { color: "red", value: "draw2" },
   { color: "blue", value: 0 },
   { color: "blue", value: 1 },
   { color: "blue", value: 2 },
@@ -42,9 +42,9 @@ const cards = [
   { color: "blue", value: 7 },
   { color: "blue", value: 8 },
   { color: "blue", value: 9 },
-  //   { color: "blue", value: "skip" },
+  { color: "blue", value: "skip" },
   { color: "blue", value: "reverse" },
-  //   { color: "blue", value: "draw2" },
+  { color: "blue", value: "draw2" },
   { color: "green", value: 0 },
   { color: "green", value: 1 },
   { color: "green", value: 2 },
@@ -64,9 +64,9 @@ const cards = [
   { color: "green", value: 7 },
   { color: "green", value: 8 },
   { color: "green", value: 9 },
-  //   { color: "green", value: "skip" },
+  { color: "green", value: "skip" },
   { color: "green", value: "reverse" },
-  //   { color: "green", value: "draw2" },
+  { color: "green", value: "draw2" },
   { color: "yellow", value: 0 },
   { color: "yellow", value: 1 },
   { color: "yellow", value: 2 },
@@ -86,15 +86,16 @@ const cards = [
   { color: "yellow", value: 7 },
   { color: "yellow", value: 8 },
   { color: "yellow", value: 9 },
-  //   { color: "yellow", value: "skip" },
+  { color: "yellow", value: "skip" },
   { color: "yellow", value: "reverse" },
-  //   { color: "yellow", value: "draw2" },
+  { color: "yellow", value: "draw2" },
   //   { color: "black", value: "wild", chance: 4 },
-  //   { color: "black", value: "draw4", chance: 4 },
+  { color: "black", value: "draw4", chance: 4 },
 ];
 
 let direction = [];
 let defaultCard = [];
+let stacks = [];
 
 // function to draw a card from the deck
 const drawOne = () => {
@@ -132,4 +133,22 @@ function getDirection(room) {
   return way;
 }
 
-module.exports = { drawOne, drawMany, setDefaultCard, getDefaultCard, setDirection, getDirection };
+function setStack(room, stack) {
+  const index = stacks.findIndex((stack) => stack.room === room);
+  if (index !== -1) {
+    if (stack === null) return stacks.splice(index, 1);
+    stacks[index].stack += stack;
+  } else {
+    stacks.push({ room, stack });
+  }
+}
+
+function getStack(room) {
+  const index = stacks.findIndex((stack) => stack.room === room);
+  if (index !== -1) {
+    return stacks[index].stack;
+  }
+  return null;
+}
+
+module.exports = { drawOne, drawMany, setDefaultCard, getDefaultCard, setDirection, getDirection, setStack, getStack };
