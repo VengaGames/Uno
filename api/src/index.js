@@ -8,8 +8,10 @@ const allowedOrigins = ["http://localhost:5173"];
 
 app.use(cors(allowedOrigins));
 
+const deployDate = new Date().toLocaleString();
+
 app.get("/", async (req, res) => {
-  return res.status(200).send({ message: "Hello world", last_deployed_at: new Date().toLocaleString() });
+  return res.status(200).send({ message: "Hello world", last_deployed_at: deployDate });
 });
 
 app.use("/room", require("./controllers/room"));
