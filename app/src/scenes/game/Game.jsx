@@ -1,14 +1,17 @@
+/* eslint-disable indent */
+/* eslint-disable react/prop-types */
 import React, { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 import API from "../../service/api";
 import useSocket from "../../hooks/socket";
 import toast from "react-hot-toast";
-import { MdOutlineAdminPanelSettings, MdExposurePlus2 } from "react-icons/md";
+import { MdOutlineAdminPanelSettings } from "react-icons/md";
 import { HiArrowLeft } from "react-icons/hi";
 import { RiLoader2Fill, RiForbid2Line } from "react-icons/ri";
 import { WiDirectionUp } from "react-icons/wi";
 import { FaExchangeAlt } from "react-icons/fa";
 import { IoIosColorFilter } from "react-icons/io";
+import AskForColor from "../../components/AskForColor";
 
 const Login = () => {
   const query = new URLSearchParams(window.location.search);
@@ -17,12 +20,13 @@ const Login = () => {
     name: query.get("name"),
     room: query.get("room"),
   };
-  const [loading, setLoading] = useState(false);
   const [deck, setDeck] = useState([]);
   const [actualCard, setActualCard] = useState(null);
   const [gameInfo, setGameInfo] = useState({ direction: "clockwise" });
+  const [color, setColor] = useState(null);
 
   const [users, setUsers] = useState([]);
+  const [isModalOpen, setIsOpen] = React.useState(false);
 
   useEffect(() => {
     if (!isConnected) return;
@@ -37,11 +41,11 @@ const Login = () => {
     });
     socket.on("roomData", ({ users }) => setUsers(users));
     socket.emit("draw-cards", 7);
-    socket.on("the-cards", (cards) => setDeck(cards));
+    socket.on("the-cards", (cards) => setDeck((prev) => [...prev, ...cards]));
     socket.on("draw-first-card", ({ card }) => setActualCard(card));
 
     socket.on("the-card", (card) => setDeck((prev) => [...prev, card]));
-    socket.on("played-card", ({ card, stack }) => {
+    socket.on("played-card", ({ card }) => {
       setActualCard(card);
       if (card.value === "skip") socket.emit("next-turn");
     });
@@ -52,13 +56,8 @@ const Login = () => {
       setGameInfo((prev) => ({ ...prev, direction: prev.direction === "clockwise" ? "counter-clockwise" : "clockwise" }));
     });
 
-    socket.on("draw-multiple", ({ stack, type }) => {
+    socket.on("draw-multiple", ({ stack }) => {
       setGameInfo((prev) => ({ ...prev, stack: stack }));
-      if (!deck.map((c) => c.value).includes(type) && gameInfo.playerToPlay?.id === socket.id && stack !== null) {
-        socket.emit("draw-cards", stack);
-        socket.emit("next-turn");
-        socket.emit("reset-stack");
-      }
     });
 
     socket.on("player-left", () => {
@@ -87,6 +86,21 @@ const Login = () => {
     }
   }, [deck]);
 
+  useEffect(() => {
+    if (color && isModalOpen) {
+      setIsOpen(false);
+      const card = { value: "draw4", color };
+      socket.emit("play-card", { card }, () => {
+        setColor(null);
+        socket.emit("next-turn");
+      });
+      setActualCard(card);
+      // really bad way to remove the card from the deck
+      const cardToRemove = deck.find((c) => c.value === "draw4");
+      setDeck((prev) => prev.filter((c) => c.id !== cardToRemove.id));
+    }
+  }, [color, isModalOpen]);
+
   if (!isConnected)
     return (
       <div className="flex flex-col items-center gap-5">
@@ -108,7 +122,11 @@ const Login = () => {
   const playCard = (card) => {
     if (isYourTurn()) return;
     // verify if card is playable
-    if (verifyCard(card)) return toast.error("Cette carte n'est pas jouable !");
+    if (!verifyCard(card)) return toast.error("Cette carte n'est pas jouable !");
+    if (card.value === "draw4") {
+      setIsOpen(true);
+      return;
+    }
     socket.emit("play-card", { card: card }, () => {
       socket.emit("next-turn");
     });
@@ -117,14 +135,23 @@ const Login = () => {
   };
 
   const verifyCard = (card) => {
-    if (card.color === "black") return false;
-    if (card.color === actualCard.color || card.value === actualCard.value) return false;
-    return true;
+    if (!!gameInfo.stack && card.value !== "draw4" && actualCard.value === "draw4") return false;
+    if (!!gameInfo.stack && ["draw2", "draw4"].includes(card.value)) return true;
+    if (card.color === "black" && !gameInfo.stack) return true;
+    if ((card.color === actualCard.color || card.value === actualCard.value) && !gameInfo.stack) return true;
+    if (["draw2", "draw4"].includes(card.value) && !gameInfo.stack) return true;
+    return false;
   };
 
   const drawCard = () => {
     if (isYourTurn()) return;
-    socket.emit("draw-card");
+    if (gameInfo.stack) {
+      socket.emit("draw-cards", gameInfo.stack);
+      socket.emit("next-turn");
+      socket.emit("reset-stack");
+    } else {
+      socket.emit("draw-card");
+    }
   };
 
   const isYourTurn = () => {
@@ -157,24 +184,31 @@ const Login = () => {
   return (
     <Wrapper roomData={roomData} users={users} info={gameInfo}>
       <div>Jeu</div>
-      <div className="flex gap-6">
-        {actualCard && <Card card={actualCard} />}
-        <Card card={{ color: "grey", value: "Pioche" }} type="pioche" onClick={() => drawCard()} />
-      </div>
-      {deck.length !== 0 ? (
-        <div className="flex mt-24">
-          <button onClick={() => sortCards()}>Trier</button>
-        </div>
+      {isModalOpen ? (
+        <AskForColor setColor={setColor} />
       ) : (
-        <div onClick={() => playAgain()} className="flex mt-24 text-2xl border rounded border-black p-5 cursor-pointer">
-          Rejouer ?
-        </div>
+        <>
+          <div className="flex gap-6">
+            {gameInfo.stack && <div className="text-2xl">Stack : +{gameInfo.stack}</div>}
+            {actualCard && <Card card={actualCard} />}
+            <Card card={{ color: "grey", value: "Pioche" }} type="pioche" onClick={() => drawCard()} />
+          </div>
+          {deck.length !== 0 ? (
+            <div className="flex mt-24">
+              <button onClick={() => sortCards()}>Trier</button>
+            </div>
+          ) : (
+            <div onClick={() => playAgain()} className="flex mt-24 text-2xl border rounded border-black p-5 cursor-pointer">
+              Rejouer ?
+            </div>
+          )}
+          <div className="flex max-w-xl flex-wrap flex-row gap-2">
+            {deck.map((card) => (
+              <Card type="card" onClick={() => playCard(card)} key={card.id} card={card} />
+            ))}
+          </div>
+        </>
       )}
-      <div className="flex max-w-xl flex-wrap flex-row gap-2">
-        {deck.map((card) => (
-          <Card type="card" onClick={() => playCard(card)} key={card.id} card={card} />
-        ))}
-      </div>
     </Wrapper>
   );
 };
@@ -236,9 +270,9 @@ const Card = ({ card, onClick = () => {}, type = "not-card" }) => {
       case "skip":
         return <RiForbid2Line className="text-black text-2xl" />;
       case "draw2":
-        return <MdExposurePlus2 className="text-black text-2xl" />;
+        return <div className="text-black text-xl">+2</div>;
       case "draw4":
-        return <div className="text-white text-2">+4</div>;
+        return <div className="text-white text-xl">+4</div>;
       case "wild":
         return <IoIosColorFilter className="text-black text-2xl" />;
       default:

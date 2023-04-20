@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { getRooms, removeUser, getUsersInRoom, getCurrentPlayerTurn } = require("../utils/users");
+const { setStack } = require("../utils/cards");
 
 router.get("/", async (req, res) => {
   try {
@@ -46,6 +47,9 @@ roomController.handleSocket = (socket, io) => {
       const user = removeUser(socket.id);
       if (!user) return;
       const usersInRoom = getUsersInRoom(user.room);
+      if (usersInRoom.length === 0) {
+        setStack(user.room, null);
+      }
 
       io.to(user.room).emit("roomData", {
         room: user.room,

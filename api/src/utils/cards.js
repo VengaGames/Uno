@@ -137,7 +137,7 @@ function setStack(room, stack) {
   const index = stacks.findIndex((stack) => stack.room === room);
   if (index !== -1) {
     if (stack === null) return stacks.splice(index, 1);
-    stacks[index].stack += stack;
+    stacks[index].stack = stack;
   } else {
     stacks.push({ room, stack });
   }
