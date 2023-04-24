@@ -1,8 +1,10 @@
+import { VITE_BACKEND_ENDPOINT } from "../config";
+
 class ApiService {
   get(path) {
     return new Promise(async (resolve, reject) => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_BACKEND_ENDPOINT}${path}`, {
+        const response = await fetch(`${VITE_BACKEND_ENDPOINT}${path}`, {
           mode: "cors",
           method: "GET",
         });

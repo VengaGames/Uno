@@ -1,7 +1,7 @@
 /* eslint-disable indent */
 /* eslint-disable react/prop-types */
 import React, { useEffect, useState } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import API from "../../service/api";
 import useSocket from "../../hooks/socket";
 import toast from "react-hot-toast";
@@ -12,9 +12,11 @@ import { WiDirectionUp } from "react-icons/wi";
 import { FaExchangeAlt } from "react-icons/fa";
 import { IoIosColorFilter } from "react-icons/io";
 import AskForColor from "../../components/AskForColor";
+import { VITE_ENV } from "../../config";
 
 const Login = () => {
   const query = new URLSearchParams(window.location.search);
+  const navigate = useNavigate();
   const { socket, isConnected } = useSocket();
   const roomData = {
     name: query.get("name"),
@@ -26,15 +28,16 @@ const Login = () => {
   const [color, setColor] = useState(null);
 
   const [users, setUsers] = useState([]);
-  const [isModalOpen, setIsOpen] = React.useState(false);
+  const [isModalOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     if (!isConnected) return;
     // initUser
     const { name, room } = roomData;
-    socket.emit("join", { name, room }, (error) => {
-      if (error) {
-        alert(error);
+    socket.emit("join", { name, room }, (res) => {
+      if (!res.ok) {
+        toast.error(res.error);
+        return navigate("/");
       }
       getDefaultCard(room);
       getCurrentPlayer(room);
@@ -52,8 +55,8 @@ const Login = () => {
     socket.on("next-player-to-play", (user) => {
       setGameInfo((prev) => ({ ...prev, playerToPlay: user }));
     });
-    socket.on("reverse", () => {
-      setGameInfo((prev) => ({ ...prev, direction: prev.direction === "clockwise" ? "counter-clockwise" : "clockwise" }));
+    socket.on("reverse", ({ direction }) => {
+      setGameInfo((prev) => ({ ...prev, direction: direction }));
     });
 
     socket.on("draw-multiple", ({ stack }) => {
@@ -68,7 +71,7 @@ const Login = () => {
       alert(`${user.name} a gagné !`);
     });
 
-    if (import.meta.env.VITE_ENVIRONNEMENT !== "development")
+    if (VITE_ENV !== "development")
       window.onbeforeunload = function () {
         return "Data will be lost if you leave the page, are you sure?";
       };
@@ -96,18 +99,11 @@ const Login = () => {
       });
       setActualCard(card);
       // really bad way to remove the card from the deck
+      // TODO: find a better way
       const cardToRemove = deck.find((c) => c.value === "draw4");
       setDeck((prev) => prev.filter((c) => c.id !== cardToRemove.id));
     }
   }, [color, isModalOpen]);
-
-  if (!isConnected)
-    return (
-      <div className="flex flex-col items-center gap-5">
-        <div>Connexion en cours...</div>
-        <RiLoader2Fill className="animate-spin text-7xl" />
-      </div>
-    );
 
   const getDefaultCard = async (room) => {
     const { data } = await API.get(`/cards/default/${room}`);
@@ -120,47 +116,24 @@ const Login = () => {
   };
 
   const playCard = (card) => {
-    if (isYourTurn()) return;
-    // verify if card is playable
-    if (!verifyCard(card)) return toast.error("Cette carte n'est pas jouable !");
     if (card.value === "draw4") {
       setIsOpen(true);
       return;
+      // the color will be set in the modal, and rest of the code will be executed in the useEffect
     }
-    socket.emit("play-card", { card: card }, () => {
-      socket.emit("next-turn");
-    });
-    setActualCard(card);
-    setDeck((prev) => prev.filter((c) => c.id !== card.id));
-  };
+    socket.emit("play-card", { card }, (res) => {
+      if (!res.ok) return toast.error(res.error);
 
-  const verifyCard = (card) => {
-    if (!!gameInfo.stack && card.value !== "draw4" && actualCard.value === "draw4") return false;
-    if (!!gameInfo.stack && ["draw2", "draw4"].includes(card.value)) return true;
-    if (card.color === "black" && !gameInfo.stack) return true;
-    if ((card.color === actualCard.color || card.value === actualCard.value) && !gameInfo.stack) return true;
-    if (["draw2", "draw4"].includes(card.value) && !gameInfo.stack) return true;
-    return false;
+      socket.emit("next-turn");
+      setActualCard(card);
+      setDeck((prev) => prev.filter((c) => c.id !== card.id));
+    });
   };
 
   const drawCard = () => {
-    if (isYourTurn()) return;
-    if (gameInfo.stack) {
-      socket.emit("draw-cards", gameInfo.stack);
-      socket.emit("next-turn");
-      socket.emit("reset-stack");
-    } else {
-      socket.emit("draw-card");
-    }
-  };
-
-  const isYourTurn = () => {
-    if (!gameInfo.playerToPlay) return false;
-
-    if (gameInfo.playerToPlay?.id !== socket.id) toast.error("Ce n'est pas votre tour !");
-    if (users.length === 1) toast.error("Vous êtes seul dans la partie !");
-
-    return gameInfo.playerToPlay?.id !== socket.id || !(users.length > 1);
+    socket.emit("draw-card", (res) => {
+      if (!res.ok) return toast.error(res.error);
+    });
   };
 
   const sortCards = () => {
@@ -180,6 +153,15 @@ const Login = () => {
       socket.emit("get-default-card");
     });
   };
+
+  if (!isConnected) {
+    return (
+      <div className="flex flex-col items-center gap-5">
+        <div>Connexion en cours...</div>
+        <RiLoader2Fill className="animate-spin text-7xl" />
+      </div>
+    );
+  }
 
   return (
     <Wrapper roomData={roomData} users={users} info={gameInfo}>

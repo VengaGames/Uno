@@ -23,7 +23,7 @@ const Login = () => {
     const name = e.target.elements.name.value;
     const { ok } = await API.get(`/room/name/available?room=${room}&name=${name}`);
     if (!ok) {
-      alert("Nom de room ou de joueur déjà pris");
+      alert("Nom de joueur déjà pris");
       return;
     }
     navigate(`/game?room=${room}&name=${name}`);

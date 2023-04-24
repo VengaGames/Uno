@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
+import { VITE_BACKEND_ENDPOINT } from "../config";
 
 const useSocket = () => {
   const socket = useRef();
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    socket.current = io(import.meta.env.VITE_BACKEND_ENDPOINT, {
+    socket.current = io(VITE_BACKEND_ENDPOINT, {
       transports: ["websocket"],
       upgrade: false,
     });

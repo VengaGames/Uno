@@ -94,8 +94,8 @@ const cards = [
 ];
 
 let direction = [];
-let defaultCard = [];
-let stacks = [];
+const stacks = [];
+const currentCards = [];
 
 // function to draw a card from the deck
 const drawOne = () => {
@@ -109,17 +109,6 @@ const drawMany = (num) => {
     cards.push({ ...drawOne(), id: uuidv4() });
   }
   return cards;
-};
-
-const setDefaultCard = (room) => {
-  defaultCard = defaultCard.filter((card) => card.room !== room);
-  const card = drawOne();
-  defaultCard.push({ ...card, id: uuidv4(), room: room });
-  return defaultCard;
-};
-
-const getDefaultCard = (room) => {
-  return defaultCard.find((card) => card.room === room);
 };
 
 function setDirection(room, way) {
@@ -151,4 +140,26 @@ function getStack(room) {
   return null;
 }
 
-module.exports = { drawOne, drawMany, setDefaultCard, getDefaultCard, setDirection, getDirection, setStack, getStack };
+function getCurrentCard(room) {
+  const index = currentCards.findIndex((card) => card.room === room);
+  if (index !== -1) {
+    return currentCards[index];
+  } else {
+    // if no card is set, set the default card
+    const card = drawOne();
+    currentCards.push({ room, ...card });
+    return card;
+  }
+}
+
+function setCurrentCard(room, card) {
+  const index = currentCards.findIndex((card) => card.room === room);
+  if (index !== -1) {
+    if (card === null) return currentCards.splice(index, 1);
+    currentCards[index] = { room, ...card };
+  } else {
+    currentCards.push({ room, ...card });
+  }
+}
+
+module.exports = { drawOne, drawMany, setDirection, getDirection, setStack, getStack, getCurrentCard, setCurrentCard };

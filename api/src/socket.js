@@ -1,5 +1,5 @@
 const { Server } = require("socket.io");
-const { drawOne, setDefaultCard, getDefaultCard } = require("./utils/cards");
+const { getCurrentCard } = require("./utils/cards");
 const { addUser, removeUser, getUsersInRoom, setCurrentPlayerTurn, getCurrentPlayerTurn } = require("./utils/users");
 
 exports.connectToIoServer = (server) => {
@@ -14,15 +14,14 @@ exports.connectToIoServer = (server) => {
     socket.on("join", ({ name, room }, callback) => {
       try {
         const { user } = addUser({ id: socket.id, name, room });
-        if (!user) return { error: "User already exists", code: 400, ok: false };
+        if (!user) callback({ error: "User already exists", code: 400, ok: false });
 
         socket.join(user.room);
 
         const usersInRoom = getUsersInRoom(user.room);
 
         if (usersInRoom.length === 1) {
-          setDefaultCard(room);
-          const card = getDefaultCard(room);
+          const card = getCurrentCard(room);
           socket.emit("draw-first-card", { card: card });
           setCurrentPlayerTurn(user.id, user.room);
           socket.emit("next-player-to-play", getCurrentPlayerTurn(user.room));
@@ -32,7 +31,7 @@ exports.connectToIoServer = (server) => {
           room: user.room,
           users: usersInRoom,
         });
-        if (callback) callback();
+        if (callback) callback({ ok: true });
       } catch (e) {
         console.log(e);
       }
