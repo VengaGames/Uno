@@ -50,7 +50,6 @@ const Login = () => {
     socket.on("the-card", (card) => setDeck((prev) => [...prev, card]));
     socket.on("played-card", ({ card }) => {
       setActualCard(card);
-      if (card.value === "skip") socket.emit("next-turn");
     });
     socket.on("next-player-to-play", (user) => {
       setGameInfo((prev) => ({ ...prev, playerToPlay: user }));
@@ -89,22 +88,6 @@ const Login = () => {
     }
   }, [deck]);
 
-  useEffect(() => {
-    if (color && isModalOpen) {
-      setIsOpen(false);
-      const card = { value: "draw4", color };
-      socket.emit("play-card", { card }, () => {
-        setColor(null);
-        socket.emit("next-turn");
-      });
-      setActualCard(card);
-      // really bad way to remove the card from the deck
-      // TODO: find a better way
-      const cardToRemove = deck.find((c) => c.value === "draw4");
-      setDeck((prev) => prev.filter((c) => c.id !== cardToRemove.id));
-    }
-  }, [color, isModalOpen]);
-
   const getDefaultCard = async (room) => {
     const { data } = await API.get(`/cards/default/${room}`);
     setActualCard(data);
@@ -116,16 +99,9 @@ const Login = () => {
   };
 
   const playCard = (card) => {
-    if (card.value === "draw4") {
-      setIsOpen(true);
-      return;
-      // the color will be set in the modal, and rest of the code will be executed in the useEffect
-    }
     socket.emit("play-card", { card }, (res) => {
       if (!res.ok) return toast.error(res.error);
 
-      socket.emit("next-turn");
-      setActualCard(card);
       setDeck((prev) => prev.filter((c) => c.id !== card.id));
     });
   };
@@ -166,31 +142,30 @@ const Login = () => {
   return (
     <Wrapper roomData={roomData} users={users} info={gameInfo}>
       <div>Jeu</div>
-      {isModalOpen ? (
-        <AskForColor setColor={setColor} />
-      ) : (
-        <>
-          <div className="flex gap-6">
-            {gameInfo.stack && <div className="text-2xl">Stack : +{gameInfo.stack}</div>}
-            {actualCard && <Card card={actualCard} />}
-            <Card card={{ color: "grey", value: "Pioche" }} type="pioche" onClick={() => drawCard()} />
+      <div className={`${isModalOpen ? "block" : "hidden"}`}>
+        <AskForColor setColor={setColor} onclose={() => setIsOpen(false)} />
+      </div>
+      <div className={`${isModalOpen ? "hidden" : "block"} flex items-center flex-col`}>
+        <div className="flex gap-6">
+          {gameInfo.stack && <div className="text-2xl">Stack : +{gameInfo.stack}</div>}
+          {actualCard && <Card card={actualCard} />}
+          <Card card={{ color: "grey", value: "Pioche" }} type="pioche" onClick={() => drawCard()} />
+        </div>
+        {deck.length !== 0 ? (
+          <div className="flex mt-24">
+            <button onClick={() => sortCards()}>Trier</button>
           </div>
-          {deck.length !== 0 ? (
-            <div className="flex mt-24">
-              <button onClick={() => sortCards()}>Trier</button>
-            </div>
-          ) : (
-            <div onClick={() => playAgain()} className="flex mt-24 text-2xl border rounded border-black p-5 cursor-pointer">
-              Rejouer ?
-            </div>
-          )}
-          <div className="flex max-w-xl flex-wrap flex-row gap-2">
-            {deck.map((card) => (
-              <Card type="card" onClick={() => playCard(card)} key={card.id} card={card} />
-            ))}
+        ) : (
+          <div onClick={() => playAgain()} className="flex mt-24 text-2xl border rounded border-black p-5 cursor-pointer">
+            Rejouer ?
           </div>
-        </>
-      )}
+        )}
+        <div className="flex max-w-xl flex-wrap flex-row gap-2">
+          {deck.map((card) => (
+            <Card type="card" onClick={playCard} key={card.id} card={card} setIsOpen={setIsOpen} color={color} setColor={setColor} />
+          ))}
+        </div>
+      </div>
     </Wrapper>
   );
 };
@@ -228,7 +203,17 @@ const ConnectedPlayers = ({ players, info }) => {
   );
 };
 
-const Card = ({ card, onClick = () => {}, type = "not-card" }) => {
+const Card = ({ card, onClick = () => {}, type = "not-card", setIsOpen, color, setColor }) => {
+  const [id, setId] = useState(null);
+  useEffect(() => {
+    if (color && id === card?.id && ["draw4", "wild"].includes(card?.value)) {
+      const newCard = { ...card, color };
+      onClick(newCard);
+      setColor(null);
+      setId(null);
+    }
+  }, [color]);
+
   const getColor = (color) => {
     switch (color) {
       case "red":
@@ -256,14 +241,19 @@ const Card = ({ card, onClick = () => {}, type = "not-card" }) => {
       case "draw4":
         return <div className="text-white text-xl">+4</div>;
       case "wild":
-        return <IoIosColorFilter className="text-black text-2xl" />;
+        return <IoIosColorFilter className="text-white text-2xl" />;
       default:
         return value;
     }
   };
   return (
     <div
-      onClick={() => onClick()}
+      onClick={() => {
+        if (card.value === "wild" || card.value === "draw4") {
+          setId(card.id);
+          setIsOpen(true);
+        } else onClick(card);
+      }}
       className={`${type === "card" ? "hover:scale-150 transition ease-in-out " : ""} ${
         type === "pioche" ? "p-3" : " w-[48px] h-[75px] "
       } flex items-center justify-center cursor-pointer border-2 border-white rounded ${getColor(card.color)}`}>

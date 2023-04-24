@@ -30,20 +30,21 @@ const verifyCard = (card, user) => {
   if (stack) {
     if (card.value !== "draw4" && actualCard.value === "draw4") return { error: "Vous devez jouer une carte +4", ok: false };
     if (!["draw2", "draw4"].includes(card.value)) return { ok: false, error: "Vous devez jouer une carte +2 ou +4" };
+    return { ok: true };
   } else {
-    if (card.color === "black" || card.value === "draw4") return { ok: true };
+    if (card.color === "black" || ["draw4", "wild"].includes(card?.value)) return { ok: true };
     if (card.color === actualCard.color || card.value === actualCard.value) return { ok: true };
   }
   return { ok: false, error: "Vous ne pouvez pas jouer cette carte" };
 };
 
-const goToNextPlayer = (user, io) => {
+const goToNextPlayer = (user, io, skipPlayer = false) => {
   const usersInRoom = getUsersInRoom(user.room);
   let way;
   if (getDirection(user.room) === "conter-clockwise") {
-    way = -1;
+    way = skipPlayer ? -2 : -1;
   } else {
-    way = 1;
+    way = skipPlayer ? 2 : 1;
   }
 
   const nextUserIndex = usersInRoom.findIndex((u) => u.id === user.id) + way;
@@ -112,7 +113,7 @@ roomController.handleSocket = (socket, io) => {
 
       // else, play the card
       setCurrentCard(user.room, card);
-      socket.broadcast.to(user.room).emit("played-card", { card: card });
+      io.to(user.room).emit("played-card", { card: card });
       if (card.value === "reverse") {
         if (!getDirection(user.room)) {
           setDirection(user.room, "conter-clockwise");
@@ -127,6 +128,10 @@ roomController.handleSocket = (socket, io) => {
         else setStack(user.room, getStack(user.room) + num);
         io.to(user.room).emit("draw-multiple", { stack: getStack(user.room) });
       }
+
+      // go to the next player
+      const skipPlayer = card.value === "skip";
+      goToNextPlayer(user, io, skipPlayer);
 
       if (callback) callback({ ok: true });
     } catch (error) {
@@ -159,7 +164,7 @@ roomController.handleSocket = (socket, io) => {
       const usersInRoom = getUsersInRoom(user.room);
 
       // reset default card
-      setCurrentCard({ room: user.room, card: null });
+      setCurrentCard(user.room, null);
 
       // redraw cards
       usersInRoom.forEach((user) => {

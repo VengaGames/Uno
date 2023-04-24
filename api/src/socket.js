@@ -1,5 +1,5 @@
 const { Server } = require("socket.io");
-const { getCurrentCard } = require("./utils/cards");
+const { getCurrentCard, setStack, setCurrentCard, setDirection } = require("./utils/cards");
 const { addUser, removeUser, getUsersInRoom, setCurrentPlayerTurn, getCurrentPlayerTurn } = require("./utils/users");
 
 exports.connectToIoServer = (server) => {
@@ -46,9 +46,16 @@ exports.connectToIoServer = (server) => {
         if (!user) return;
 
         const usersInRoom = getUsersInRoom(user.room);
-        if (usersInRoom.length === 0) return;
+        if (usersInRoom.length === 0) {
+          //reset all
+          setCurrentCard(user.room, null);
+          setCurrentPlayerTurn(null, user.room);
+          setStack(user.room, null);
+          setDirection(user.room, null);
+          return;
+        }
         setCurrentPlayerTurn(usersInRoom[0].id, user.room);
-        socket.broadcast.to(user.room).emit("next-player-to-play", getCurrentPlayerTurn(user.room));
+        io.to(user.room).emit("next-player-to-play", getCurrentPlayerTurn(user.room));
 
         io.to(user.room).emit("roomData", {
           room: user.room,

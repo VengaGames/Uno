@@ -112,6 +112,7 @@ const drawMany = (num) => {
 };
 
 function setDirection(room, way) {
+  if (way === null) return (direction = direction.filter((dir) => dir.room !== room));
   direction = direction.filter((dir) => dir.room !== room);
   direction.push({ room: room, way: way });
 }
