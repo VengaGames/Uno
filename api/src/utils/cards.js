@@ -89,8 +89,14 @@ const cards = [
   { color: "yellow", value: "skip" },
   { color: "yellow", value: "reverse" },
   { color: "yellow", value: "draw2" },
-  //   { color: "black", value: "wild", chance: 4 },
-  { color: "black", value: "draw4", chance: 4 },
+  { color: "black", value: "wild" },
+  { color: "black", value: "wild" },
+  { color: "black", value: "wild" },
+  { color: "black", value: "wild" },
+  { color: "black", value: "draw4" },
+  { color: "black", value: "draw4" },
+  { color: "black", value: "draw4" },
+  { color: "black", value: "draw4" },
 ];
 
 let direction = [];
