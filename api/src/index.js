@@ -4,7 +4,7 @@ const cors = require("cors");
 const http = require("http");
 const app = express();
 const { connectToIoServer } = require("./socket");
-const allowedOrigins = ["http://localhost:5173"];
+const allowedOrigins = ["http://localhost:5173", "https://uno-lh06.onrender.com"];
 
 app.use(cors(allowedOrigins));
 
