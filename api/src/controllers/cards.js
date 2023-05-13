@@ -94,7 +94,6 @@ roomController.handleSocket = (socket, io) => {
 
       // verify if the user has the card
       const userCards = user.cards;
-      console.log(userCards, card);
       const index = userCards.findIndex((c) => c.id === card.id);
       if (index === -1) return callback({ error: "Vous n'avez pas cette carte", ok: false });
 
@@ -140,6 +139,10 @@ roomController.handleSocket = (socket, io) => {
         userCards.filter((c) => c.id !== card.id),
       );
       io.to(socket.id).emit("deck", { cards: user.cards });
+      io.to(user.room).emit("roomData", {
+        room: user.room,
+        users: getUsersInRoom(user.room),
+      });
 
       // check if the user won
       if (user.cards.length === 0) {
@@ -151,7 +154,7 @@ roomController.handleSocket = (socket, io) => {
       console.log(error);
     }
   });
-  socket.on("play-again", (callback) => {
+  socket.on("play-again", () => {
     try {
       const user = getUser(socket.id);
       const usersInRoom = getUsersInRoom(user.room);
@@ -162,13 +165,17 @@ roomController.handleSocket = (socket, io) => {
       // redraw cards
       usersInRoom.forEach((user) => {
         const cards = drawMany(7);
-        modifyUser(user.id, "cards", cards);
-        io.to(user.id).emit("deck", cards);
+        // keep the old cards, more fun
+        modifyUser(user.id, "cards", [...user.cards, ...cards]);
+        io.to(user.id).emit("deck", { cards: user.cards });
       });
 
       const defaultCard = getCurrentCard(user.room);
       io.to(user.room).emit("draw-first-card", { card: defaultCard });
-      callback();
+      io.to(user.room).emit("roomData", {
+        room: user.room,
+        users: getUsersInRoom(user.room),
+      });
     } catch (error) {
       console.log(error);
     }

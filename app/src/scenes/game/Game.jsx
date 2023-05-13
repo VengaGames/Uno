@@ -60,9 +60,7 @@ const Login = () => {
         return "Data will be lost if you leave the page, are you sure?";
       };
 
-    return () => {
-      socket.emit("leave-room");
-    };
+    return () => socket.emit("leave-room");
   }, [isConnected]);
 
   const getDefaultCard = async (room) => {

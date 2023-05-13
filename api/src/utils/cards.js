@@ -104,7 +104,12 @@ const stacks = [];
 const currentCards = [];
 
 // function to draw a card from the deck
-const drawOne = () => {
+const drawOne = (options = "") => {
+  if (options === "not-black") {
+    const cardsWithoutBlack = cards.filter((card) => card.color !== "black");
+    const card = cardsWithoutBlack[Math.floor(Math.random() * cardsWithoutBlack.length)];
+    return { ...card, id: uuidv4() };
+  }
   const card = cards[Math.floor(Math.random() * cards.length)];
   return { ...card, id: uuidv4() };
 };
@@ -153,7 +158,7 @@ function getCurrentCard(room) {
     return currentCards[index];
   } else {
     // if no card is set, set the default card
-    const card = drawOne();
+    const card = drawOne("not-black");
     currentCards.push({ room, ...card });
     return card;
   }
