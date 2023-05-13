@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { getRooms, modifyUser, getUser, getUsersInRoom, getCurrentPlayerTurn, setCurrentPlayerTurn } = require("../utils/users");
+const { modifyUser, getUser, getUsersInRoom, getCurrentPlayerTurn, setCurrentPlayerTurn } = require("../utils/users");
 const { drawOne, drawMany, getDirection, setDirection, getStack, setStack, getCurrentCard, setCurrentCard } = require("../utils/cards");
 
 router.get("/default/:room", async (req, res) => {
@@ -58,14 +58,6 @@ const goToNextPlayer = (user, io, skipPlayer = false) => {
 const roomController = (module.exports = router);
 
 roomController.handleSocket = (socket, io) => {
-  socket.on("next-turn", () => {
-    try {
-      const user = getUser(socket.id);
-      goToNextPlayer(user, io);
-    } catch (error) {
-      console.log(error);
-    }
-  });
   socket.on("draw-card", (callback) => {
     try {
       const user = getUser(socket.id);
@@ -73,29 +65,25 @@ roomController.handleSocket = (socket, io) => {
       const turnVerify = isThePlayerTurn(user);
       if (!turnVerify.ok) return callback(turnVerify);
 
-      // else, draw the number of cards in the stack, if there is one
+      // draw the number of cards in the stack, if there is one
       const stack = getStack(user.room);
       if (stack) {
         const cards = drawMany(stack);
         setStack(user.room, null);
-        io.to(user.room).emit("draw-multiple", { stack: null });
-        if (callback) callback({ ok: true });
-        io.to(socket.id).emit("the-cards", cards);
+        modifyUser(user.id, "cards", [...user.cards, ...cards]);
+        io.to(user.room).emit("set-stack", { stack: null });
       } else {
         const card = drawOne();
-        if (callback) callback({ ok: true });
-        io.to(socket.id).emit("the-card", card);
+        modifyUser(user.id, "cards", [...user.cards, card]);
       }
+      if (callback) callback({ ok: true });
+      io.to(socket.id).emit("deck", { cards: user.cards });
+      io.to(user.room).emit("roomData", {
+        room: user.room,
+        users: getUsersInRoom(user.room),
+      });
       // go to the next player
       goToNextPlayer(user, io);
-    } catch (error) {
-      console.log(error);
-    }
-  });
-  socket.on("draw-cards", (num) => {
-    try {
-      const cards = drawMany(num);
-      io.to(socket.id).emit("the-cards", cards);
     } catch (error) {
       console.log(error);
     }
@@ -103,13 +91,25 @@ roomController.handleSocket = (socket, io) => {
   socket.on("play-card", ({ card }, callback) => {
     try {
       const user = getUser(socket.id);
+
+      // verify if the user has the card
+      const userCards = user.cards;
+      console.log(userCards, card);
+      const index = userCards.findIndex((c) => c.id === card.id);
+      if (index === -1) return callback({ error: "Vous n'avez pas cette carte", ok: false });
+
+      // play a la volée
+      const actualCard = getCurrentCard(user.room);
+      let cardVoleVerify = false;
+      if (card.value === actualCard.value && card.color === actualCard.color) cardVoleVerify = true;
+
       // verify if it's the user turn
       const turnVerify = isThePlayerTurn(user);
-      if (!turnVerify.ok) return callback(turnVerify);
+      if (!turnVerify.ok && !cardVoleVerify) return callback(turnVerify);
 
       // verify if the card is valid
       const cardVerify = verifyCard(card, user);
-      if (!cardVerify.ok) return callback(cardVerify);
+      if (!cardVerify.ok && !cardVoleVerify) return callback(cardVerify);
 
       // else, play the card
       setCurrentCard(user.room, card);
@@ -126,38 +126,31 @@ roomController.handleSocket = (socket, io) => {
         const num = card.value === "draw2" ? 2 : 4;
         if (!getStack(user.room)) setStack(user.room, num);
         else setStack(user.room, getStack(user.room) + num);
-        io.to(user.room).emit("draw-multiple", { stack: getStack(user.room) });
+        io.to(user.room).emit("set-stack", { stack: getStack(user.room) });
       }
 
       // go to the next player
       const skipPlayer = card.value === "skip";
       goToNextPlayer(user, io, skipPlayer);
 
+      // remove the card from the user deck
+      modifyUser(
+        user.id,
+        "cards",
+        userCards.filter((c) => c.id !== card.id),
+      );
+      io.to(socket.id).emit("deck", { cards: user.cards });
+
+      // check if the user won
+      if (user.cards.length === 0) {
+        io.to(user.room).emit("player-won", { user: user });
+      }
+
       if (callback) callback({ ok: true });
     } catch (error) {
       console.log(error);
     }
   });
-  socket.on("card-numbers", (num) => {
-    try {
-      const user = getUser(socket.id);
-      if (!user) return;
-      const usersInRoom = getUsersInRoom(user.room);
-      modifyUser(socket.id, "cardsNb", num);
-      io.to(user.room).emit("roomData", { users: usersInRoom });
-    } catch (error) {
-      console.log(error);
-    }
-  });
-  socket.on("winner", () => {
-    try {
-      const user = getUser(socket.id);
-      io.to(user.room).emit("player-won", { user: user });
-    } catch (error) {
-      console.log(error);
-    }
-  });
-
   socket.on("play-again", (callback) => {
     try {
       const user = getUser(socket.id);
@@ -169,19 +162,13 @@ roomController.handleSocket = (socket, io) => {
       // redraw cards
       usersInRoom.forEach((user) => {
         const cards = drawMany(7);
-        io.to(user.id).emit("the-cards", cards);
+        modifyUser(user.id, "cards", cards);
+        io.to(user.id).emit("deck", cards);
       });
-      callback();
-    } catch (error) {
-      console.log(error);
-    }
-  });
 
-  socket.on("get-default-card", () => {
-    try {
-      const user = getUser(socket.id);
       const defaultCard = getCurrentCard(user.room);
       io.to(user.room).emit("draw-first-card", { card: defaultCard });
+      callback();
     } catch (error) {
       console.log(error);
     }

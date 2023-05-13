@@ -31,6 +31,7 @@ exports.connectToIoServer = (server) => {
           room: user.room,
           users: usersInRoom,
         });
+        io.to(socket.id).emit("deck", { cards: user.cards });
         if (callback) callback({ ok: true });
       } catch (e) {
         console.log(e);

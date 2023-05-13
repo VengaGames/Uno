@@ -1,3 +1,5 @@
+const { drawMany } = require("./cards");
+
 const users = [];
 let currentPlayer = [];
 
@@ -12,12 +14,14 @@ function addUser({ id, name, room }) {
 
   const usersInThisRoom = getUsersInRoom(room);
 
+  const defaultDeck = drawMany(7);
+
   if (usersInThisRoom.length === 0 || usersInThisRoom.every((user) => user.admin === false)) {
-    const user = { id, name, room, admin: true };
+    const user = { id, name, room, admin: true, cards: defaultDeck };
     users.push(user);
     return { user };
   }
-  const user = { id, name, room, admin: false };
+  const user = { id, name, room, admin: false, cards: defaultDeck };
   users.push(user);
 
   return { user };

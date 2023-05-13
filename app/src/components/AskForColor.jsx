@@ -3,7 +3,7 @@ import React from "react";
 
 function AskForColor({ setColor, onclose }) {
   return (
-    <div className="flex flex-col items-center justify-center">
+    <div className="flex mb-8 flex-col items-center justify-center">
       <h2>Choose a color</h2>
       <div className="flex gap-2 flex-col">
         <div className="flex gap-2 ">
