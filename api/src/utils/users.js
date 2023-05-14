@@ -14,7 +14,7 @@ function addUser({ id, name, room }) {
 
   const usersInThisRoom = getUsersInRoom(room);
 
-  const defaultDeck = drawMany(2);
+  const defaultDeck = drawMany(7);
 
   if (usersInThisRoom.length === 0 || usersInThisRoom.every((user) => user.admin === false)) {
     const user = { id, name, room, admin: true, cards: defaultDeck };
