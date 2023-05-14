@@ -50,6 +50,8 @@ const Login = () => {
     socket.on("next-player-to-play", (user) => setGameInfo((prev) => ({ ...prev, playerToPlay: user })));
     socket.on("reverse", ({ direction }) => setGameInfo((prev) => ({ ...prev, direction: direction })));
     socket.on("set-stack", ({ stack }) => setGameInfo((prev) => ({ ...prev, stack: stack })));
+    socket.on("uno", ({ user }) => setGameInfo((prev) => ({ ...prev, uno: user })));
+    socket.on("uno-clicked", () => setGameInfo((prev) => ({ ...prev, uno: null })));
 
     socket.on("player-left", () => getCurrentPlayer(room));
 
@@ -85,7 +87,25 @@ const Login = () => {
     });
   };
 
-  if (!isConnected) {
+  const renderUnoButton = () => {
+    // spawn a button to emit uno on a random position
+    // generate a random boolean to choose between left or right
+    const randomSide = Math.random() >= 0.5;
+    const randomX = randomSide
+      ? Math.floor(Math.random() * (window.innerWidth / 2 - 440))
+      : Math.floor(Math.random() * (window.innerWidth / 2 - 440)) + window.innerWidth / 2 + 300;
+    const randomY = Math.floor(Math.random() * (window.innerHeight - 50));
+    return (
+      <div
+        onClick={() => socket.emit("uno-click", { unoUser: gameInfo.uno })}
+        className="absolute text-xl border rounded border-black p-2 cursor-pointer"
+        style={{ top: randomY, left: randomX }}>
+        {gameInfo.uno?.id === socket.id ? "UNO !" : "Contre UNO"}
+      </div>
+    );
+  };
+
+  if (!isConnected || !socket) {
     return (
       <div className="flex flex-col items-center gap-5">
         <div>Connexion en cours...</div>
@@ -110,6 +130,7 @@ const Login = () => {
             Rejouer ?
           </div>
         )}
+        {gameInfo?.uno && renderUnoButton()}
         <div className="flex max-w-xl mt-24 flex-wrap flex-row gap-2">
           {deck.map((card) => (
             <Card type="card" onClick={playCard} key={card.id} card={card} setIsOpen={setIsOpen} color={color} setColor={setColor} />

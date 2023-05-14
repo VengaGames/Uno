@@ -147,6 +147,8 @@ roomController.handleSocket = (socket, io) => {
       // check if the user won
       if (user.cards.length === 0) {
         io.to(user.room).emit("player-won", { user: user });
+      } else if (user.cards.length === 1) {
+        io.to(user.room).emit("uno", { user: user });
       }
 
       if (callback) callback({ ok: true });
@@ -178,6 +180,23 @@ roomController.handleSocket = (socket, io) => {
       });
     } catch (error) {
       console.log(error);
+    }
+  });
+  socket.on("uno-click", ({ unoUser }) => {
+    const user = getUser(socket.id);
+    if (user.id === unoUser.id) {
+      io.to(user.room).emit("uno-clicked");
+    } else {
+      // draw 2 cards for this user
+      unoUser = getUser(unoUser.id);
+      const cards = drawMany(2);
+      modifyUser(unoUser.id, "cards", [...unoUser.cards, ...cards]);
+      io.to(unoUser.id).emit("deck", { cards: unoUser.cards });
+      io.to(user.room).emit("uno-clicked");
+      io.to(user.room).emit("roomData", {
+        room: user.room,
+        users: getUsersInRoom(user.room),
+      });
     }
   });
 };
