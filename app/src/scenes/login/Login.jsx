@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import API from "../../service/api";
 import { HiArrowLeft } from "react-icons/hi";
 import { NavLink } from "react-router-dom";
+import vengaicon from "../asset/vengaicon.jpeg";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -30,17 +31,25 @@ const Login = () => {
   };
   return (
     <div>
-      <div className="w-full h-full flex flex-col items-center justify-center mt-24">
-        <div className="bg-white justify-center flex flex-col border rounded-lg border-gray-500 items-center shadow-2xl w-3/4 md:w-1/4">
-          <h1 className="mt-5 text-xl font-semibold">Uno !</h1>
+      <nav className="p-3 border-gray-700 bg-[#242531]">
+        <div className="container flex flex-wrap items-center justify-center mx-auto">
+          <div className="flex flex-row justify-center items-center">
+            <img src={vengaicon} className="h-6 mr-3 sm:h-10 " alt="Venga Logo" />
+            <span className="self-center text-xl font-semibold whitespace-nowrap dark:text-white">VengaGAMES</span>
+          </div>
+        </div>
+      </nav>
+      <NavLink to="https://lejeudelaplaylist.onrender.com/" end>
+        <HiArrowLeft className="text-white ml-2 mt-2 w-10 h-10 transition ease-in-out delay-150 hover:-translate-y-1 hover:scale-110 duration-300 ..." alt="icone fleche retour" />
+      </NavLink>
+      <div className="w-full h-full flex flex-col items-center justify-center mt-10">
+        <div className="bg-[#242531] justify-center flex flex-col  rounded-lg items-center shadow-2xl w-3/4 md:w-1/4">
+          <h1 className="mt-5 mb-2 text-xl font-semibold text-white">Uno !</h1>
           <form onSubmit={handleSubmit} className="flex flex-col">
-            <label className="ml-2.5 mt-2.5" htmlFor="room">
-              Room
-            </label>
             <input
               placeholder="Nom de la room..."
               autoComplete="off"
-              className="border border-gray-500 rounded-lg w-5/6 ml-2.5 mb-1 focus:bg-regal-purple outline-1 outline-black"
+              className="bg-[#242531] !ring-0 !outline-none rounded-3xl text-white w-60 h-12 shadow-md shadow-[#00FECC] font-semibold "
               required
               type="text"
               name="room"
@@ -49,13 +58,11 @@ const Login = () => {
                 e.target.setCustomValidity("Choisis une salle !");
               }}
             />
-            <label className="ml-2.5 mt-2.5" htmlFor="name">
-              Pseudo
-            </label>
+
             <input
               placeholder="Ton Pseudo..."
               autoComplete="off"
-              className="border border-gray-500 rounded-lg w-5/6 ml-2.5 mb-1 focus:bg-regal-purple outline-1 outline-black"
+              className="bg-[#242531] !ring-0 !outline-none rounded-3xl text-white w-60 h-12 shadow-md shadow-[#00FECC] mt-6 font-semibold "
               required
               type="text"
               name="name"
@@ -64,7 +71,7 @@ const Login = () => {
               }}
             />
             <div className="flex flex-col items-center">
-              <button className="bg-regal-purple rounded-lg border text-white mt-2 mb-2 w-20" type="submit">
+              <button className="bg-[#FDFDFD] rounded-3xl text-center flex flex-row justify-center items-center mt-4 mb-2 w-24 font-semibold" type="submit">
                 Rejoindre
               </button>
             </div>
@@ -72,12 +79,12 @@ const Login = () => {
         </div>
         {rooms.length > 0 ? (
           <div className="mt-8">
-            <h1 className="text-lg mb-2">Salles disponibles :</h1>
+            <h1 className="text-lg mb-2 text-white">Salles disponibles :</h1>
             <div className="flex flex-col gap-2">
               {rooms.map((room) => (
                 <div key={room.name} className="flex gap-2 cursor-pointer" onClick={() => (document.getElementById("room").value = room.name)}>
-                  <div>{room.name}</div>
-                  <div>
+                  <div className="text-white">{room.name}</div>
+                  <div className="text-white">
                     ({room.usersNb} joueur{room.usersNb > 1 ? "s" : ""})
                   </div>
                 </div>
@@ -86,9 +93,9 @@ const Login = () => {
           </div>
         ) : null}
       </div>
-      {/* <div className="fixed bottom-0 flex justify-center w-full">
-        <h3> Vengaboys © - 2023</h3>
-      </div> */}
+      <div className="fixed bottom-0 flex justify-center w-full bg-[#242531]">
+        <h3 className="text-white"> Vengaboys © - 2023</h3>
+      </div>
     </div>
   );
 };
