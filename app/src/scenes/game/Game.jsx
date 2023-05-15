@@ -99,7 +99,7 @@ const Login = () => {
     return (
       <div
         onClick={() => socket.emit("uno-click", { unoUser: gameInfo.uno })}
-        className="absolute text-xl border rounded border-black p-2 cursor-pointer"
+        className="absolute text-xl border rounded border-white text-white p-2 cursor-pointer"
         style={{ top: randomY, left: randomX }}>
         {gameInfo.uno?.id === socket.id ? "UNO !" : "Contre UNO"}
       </div>
@@ -127,7 +127,7 @@ const Login = () => {
           <Card card={{ color: "grey", value: "Pioche" }} type="pioche" onClick={() => drawCard()} />
         </div>
         {deck.length === 0 && (
-          <div onClick={() => socket.emit("play-again")} className="flex mt-24 text-2xl border rounded border-black p-5 cursor-pointer">
+          <div onClick={() => socket.emit("play-again")} className="flex mt-24 text-2xl border rounded border-white text-white p-5 cursor-pointer">
             Rejouer ?
           </div>
         )}
