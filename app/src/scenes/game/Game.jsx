@@ -12,6 +12,7 @@ import { FaExchangeAlt } from "react-icons/fa";
 import { IoIosColorFilter } from "react-icons/io";
 import AskForColor from "../../components/AskForColor";
 import { VITE_ENV } from "../../config";
+import vengaicon from "../asset/vengaicon.jpeg";
 
 const Login = () => {
   const query = new URLSearchParams(window.location.search);
@@ -143,19 +144,19 @@ const Login = () => {
 
 const ConnectedPlayers = ({ players, info }) => {
   return (
-    <div className="flex flex-col h-fit p-3 border border-black rounded-lg items-center">
-      <div className="mb-2">Joueurs</div>
+    <div className="flex flex-col h-fit p-3 bg-[#FDFDFD] rounded-lg items-center">
+      <div className="mb-2 text-black font-semibold ">Joueurs</div>
       <div className="flex items-center gap-3">
         <div className="flex flex-col gap-2 justify-center items-start">
           {players.map((player) => (
             <div key={player.id} className="flex gap-2 justify-end items-center">
               {player.id === info?.playerToPlay?.id ? <WiDirectionUp className="text-red-500 rotate-90 text-xl" /> : <WiDirectionUp className="opacity-0 text-xl" />}
               <div className={`${player.id === info?.playerToPlay?.id ? "text-green-500" : "text-black"}`}>{player.name}</div>
-              {player.cards && <div className="text-black">{player.cards.length}</div>}
+              {player.cards && <div className="text-black font-semibold">{player.cards.length}</div>}
             </div>
           ))}
         </div>
-        <WiDirectionUp className={`text-black text-xl ${info.direction === "clockwise" ? "rotate-180" : ""}`} />
+        <WiDirectionUp className={`text-black font-semibold text-xl ${info.direction === "clockwise" ? "rotate-180" : ""}`} />
       </div>
     </div>
   );
@@ -222,16 +223,32 @@ const Card = ({ card, onClick = () => {}, type = "not-card", setIsOpen, color, s
 
 const Wrapper = ({ children, roomData, users, info }) => {
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center p-3">
-      <div className="flex mb-4 flex-row justify-between items-center w-full">
-        <NavLink to="/" end>
-          <HiArrowLeft className="transition min-w-[32px] min-h-[32px] ease-in-out delay-150 hover:-translate-y-1 hover:scale-110 duration-300" alt="icone fleche retour" />
-        </NavLink>
-        <h1 className="flex items-center">Room : {roomData.room}</h1>
-        <div />
+    <div>
+      <nav className="p-3 border-gray-700 bg-[#242531]">
+        <div className="container flex flex-wrap items-center justify-center mx-auto">
+          <div className="flex flex-row justify-center items-center">
+            <img src={vengaicon} className="h-6 mr-3 sm:h-10 " alt="Venga Logo" />
+            <span className="self-center text-xl font-semibold whitespace-nowrap dark:text-white">VengaGAMES</span>
+          </div>
+        </div>
+      </nav>
+      <div className="w-full h-full flex flex-col items-center justify-center p-3">
+        <div className="flex mb-4 flex-row justify-between items-center w-full">
+          <NavLink to="/" end>
+            <HiArrowLeft
+              className="text-white transition min-w-[32px] min-h-[32px] ease-in-out delay-150 hover:-translate-y-1 hover:scale-110 duration-300"
+              alt="icone fleche retour"
+            />
+          </NavLink>
+          <h1 className="bg-[#FDFDFD] rounded-3xl text-center flex flex-row justify-center items-center mt-4 mb-2 w-32 font-semibold">Room : {roomData.room}</h1>
+          <div />
+        </div>
+        <ConnectedPlayers players={users} info={info} />
+        <div className="flex items-center flex-col w-full p-3">{children}</div>
       </div>
-      <ConnectedPlayers players={users} info={info} />
-      <div className="flex items-center flex-col w-full p-3">{children}</div>
+      <div className="fixed bottom-0 flex justify-center w-full bg-[#242531]">
+        <h3 className="text-white"> Vengaboys © - 2023</h3>
+      </div>
     </div>
   );
 };
