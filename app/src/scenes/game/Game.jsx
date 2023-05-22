@@ -96,12 +96,17 @@ const Login = () => {
       ? Math.floor(Math.random() * (window.innerWidth / 2 - 440))
       : Math.floor(Math.random() * (window.innerWidth / 2 - 440)) + window.innerWidth / 2 + 300;
     const randomY = Math.floor(Math.random() * (window.innerHeight - 50));
+    // take a random letter in the alphabet
+    const randomLetter = String.fromCharCode(65 + Math.floor(Math.random() * 26));
+    // if the user press the key of the letter, emit uno
+    document.addEventListener("keydown", (e) => {
+      if (e.key.toUpperCase() === randomLetter) {
+        socket.emit("uno-click", { unoUser: gameInfo.uno });
+      }
+    });
     return (
-      <div
-        onClick={() => socket.emit("uno-click", { unoUser: gameInfo.uno })}
-        className="absolute text-xl border rounded border-white text-white p-2 cursor-pointer"
-        style={{ top: randomY, left: randomX }}>
-        {gameInfo.uno?.id === socket.id ? "UNO !" : "Contre UNO"}
+      <div className="absolute text-xl border rounded border-white uppercase text-white p-2 cursor-pointer" style={{ top: randomY, left: randomX }}>
+        {randomLetter}
       </div>
     );
   };
