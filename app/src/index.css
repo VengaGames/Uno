@@ -14,3 +14,9 @@ body {
   background-color: #1f1f26;
   overflow-x: hidden;
 }
+
+.subtitle {
+  color: white;
+  font-size: 1.5rem;
+  text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 1px 1px 0 black;
+}

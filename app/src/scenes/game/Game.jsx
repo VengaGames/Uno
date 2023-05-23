@@ -43,10 +43,40 @@ const Login = () => {
       getCurrentPlayer(room);
     });
     socket.on("roomData", ({ users }) => setUsers([...users]));
-    socket.on("deck", ({ cards }) => setDeck([...cards]));
+    socket.on("deck", async ({ cards, wait }) => {
+      if (wait === true) await new Promise((resolve) => setTimeout(resolve, 500));
+      setDeck([...cards]);
+    });
 
     socket.on("draw-first-card", ({ card }) => setActualCard(card));
-    socket.on("played-card", ({ card }) => setActualCard(card));
+    socket.on("played-card", ({ card, vole, user }) => {
+      setActualCard(card);
+      // if vole is true, play an animation to show users that he played a la volé
+      if (vole === true) {
+        const vole = document.createElement("div");
+        vole.innerHTML = `<div class="subtitle">${user.name} a joué à la volée !</div>`;
+        const positions = {
+          x: ["left-1/2", "left-1/3", "left-2/3", "left-1/4", "left-3/4"],
+          y: ["top-1/2", "top-1/3", "top-2/3", "top-1/4", "top-3/4"],
+        };
+        const translations = {
+          x: ["-translate-x-1/2", "translate-x-1/2"],
+          y: ["-translate-y-1/2", "translate-y-1/2"],
+        };
+        const getRandomItem = (array) => array[Math.floor(Math.random() * array.length)];
+
+        const randomX = getRandomItem(positions.x);
+        const randomY = getRandomItem(positions.y);
+        const randomTranslateX = getRandomItem(translations.x);
+        const randomTranslateY = getRandomItem(translations.y);
+        vole.classList.add("absolute", "w-fit", "h-10", "animate-[spin_1.5s_linear]", randomX, randomY, randomTranslateX, randomTranslateY, "z-50", "transform");
+        document.getElementById("game").appendChild(vole);
+
+        setTimeout(() => {
+          vole.remove();
+        }, 1500);
+      }
+    });
 
     socket.on("next-player-to-play", (user) => setGameInfo((prev) => ({ ...prev, playerToPlay: user })));
     socket.on("reverse", ({ direction }) => setGameInfo((prev) => ({ ...prev, direction: direction })));
@@ -76,9 +106,24 @@ const Login = () => {
     setGameInfo((prev) => ({ ...prev, playerToPlay: data }));
   };
 
-  const playCard = (card) => {
+  const playCard = async (card, event) => {
     socket.emit("play-card", { card }, (res) => {
       if (!res.ok) return toast.error(res.error);
+      if (event) {
+        const finalPosition = document.getElementById("actualCard").getBoundingClientRect();
+        const finalX = finalPosition.left;
+        const finalY = finalPosition.top;
+
+        const rect = event.target.getBoundingClientRect();
+        const startX = rect.left;
+        const startY = rect.top;
+
+        const translateX = finalX - startX - 10;
+        const translateY = finalY - startY - 20;
+
+        event.target.style.transform = "translate(" + translateX + "px, " + translateY + "px)";
+        event.target.style.transition = "transform 0.5s ease-in-out";
+      }
     });
   };
 
@@ -91,11 +136,13 @@ const Login = () => {
   const renderUnoButton = () => {
     // spawn a button to emit uno on a random position
     // generate a random boolean to choose between left or right
-    const randomSide = Math.random() >= 0.5;
+    const randomSide = Math.random() >= 1;
+    const middleGameSize = window.innerWidth / 4;
     const randomX = randomSide
-      ? Math.floor(Math.random() * (window.innerWidth / 2 - 440))
-      : Math.floor(Math.random() * (window.innerWidth / 2 - 440)) + window.innerWidth / 2 + 300;
+      ? Math.floor(Math.random() * (window.innerWidth / 2 - middleGameSize))
+      : Math.floor(Math.random() * (window.innerWidth / 2 - middleGameSize)) + window.innerWidth / 2 - 35 + middleGameSize;
     const randomY = Math.floor(Math.random() * (window.innerHeight - 50));
+
     // take a random letter in the alphabet
     const randomLetter = String.fromCharCode(65 + Math.floor(Math.random() * 26));
     // if the user press the key of the letter, emit uno
@@ -105,7 +152,7 @@ const Login = () => {
       }
     });
     return (
-      <div className="absolute text-xl border rounded border-white uppercase text-white p-2 cursor-pointer" style={{ top: randomY, left: randomX }}>
+      <div className="absolute text-xl border rounded border-white uppercase text-white p-2" style={{ top: randomY, left: randomX }}>
         {randomLetter}
       </div>
     );
@@ -114,8 +161,8 @@ const Login = () => {
   if (!isConnected || !socket) {
     return (
       <div className="flex flex-col items-center gap-5">
-        <div>Connexion en cours...</div>
-        <RiLoader2Fill className="animate-spin text-7xl" />
+        <div className="text-white">Connexion en cours...</div>
+        <RiLoader2Fill className="animate-spin text-7xl text-white" />
       </div>
     );
   }
@@ -128,7 +175,7 @@ const Login = () => {
       <div className={`${isModalOpen ? "pointer-events-none" : "block"} flex items-center flex-col mt-3`}>
         <div className="flex gap-6">
           {gameInfo.stack && <div className="text-2xl">Stack : +{gameInfo.stack}</div>}
-          {actualCard && <Card card={actualCard} />}
+          {actualCard && <Card card={actualCard} classId="actualCard" />}
           <Card card={{ color: "grey", value: "Pioche" }} type="pioche" onClick={() => drawCard()} />
         </div>
         {deck.length === 0 && (
@@ -167,7 +214,7 @@ const ConnectedPlayers = ({ players, info }) => {
   );
 };
 
-const Card = ({ card, onClick = () => {}, type = "not-card", setIsOpen, color, setColor }) => {
+const Card = ({ card, onClick = () => {}, type = "not-card", setIsOpen, color, setColor, classId }) => {
   const [id, setId] = useState(null);
   useEffect(() => {
     if (color && id === card?.id && ["draw4", "wild"].includes(card?.value)) {
@@ -212,11 +259,12 @@ const Card = ({ card, onClick = () => {}, type = "not-card", setIsOpen, color, s
   };
   return (
     <div
-      onClick={() => {
+      id={classId || card.id}
+      onClick={(e) => {
         if (card.value === "wild" || card.value === "draw4") {
           setId(card.id);
           setIsOpen(true);
-        } else onClick(card);
+        } else onClick(card, e);
       }}
       className={`${type === "card" ? "hover:scale-150 transition ease-in-out " : ""} ${
         type === "pioche" ? "p-3" : " w-[48px] h-[75px] "
@@ -228,31 +276,24 @@ const Card = ({ card, onClick = () => {}, type = "not-card", setIsOpen, color, s
 
 const Wrapper = ({ children, roomData, users, info }) => {
   return (
-    <div>
+    <div id="game">
       <nav className="p-3 border-gray-700 bg-[#242531]">
         <div className="container flex flex-wrap items-center justify-center mx-auto">
           <div className="flex flex-row justify-center items-center">
             <img src={vengaicon} className="h-6 mr-3 sm:h-10 " alt="Venga Logo" />
             <span className="self-center text-xl font-semibold whitespace-nowrap dark:text-white">VengaGAMES</span>
+            <h1 className="bg-[#FDFDFD] rounded-3xl text-center flex flex-row justify-center items-center ml-3 p-1 font-semibold">Room : {roomData.room}</h1>
           </div>
         </div>
       </nav>
       <div className="w-full h-full flex flex-col items-center justify-center p-3">
-        <div className="flex mb-4 flex-row justify-between items-center w-full">
+        <div className="w-fit absolute left-2 top-20">
           <NavLink to="/" end>
-            <HiArrowLeft
-              className="text-white transition min-w-[32px] min-h-[32px] ease-in-out delay-150 hover:-translate-y-1 hover:scale-110 duration-300"
-              alt="icone fleche retour"
-            />
+            <HiArrowLeft className="text-white transition min-w-[32px] min-h-[32px] ease-in-out delay-150 hover:-translate-y-1 hover:scale-110 duration-300" />
           </NavLink>
-          <h1 className="bg-[#FDFDFD] rounded-3xl text-center flex flex-row justify-center items-center mt-4 mb-2 w-32 font-semibold">Room : {roomData.room}</h1>
-          <div />
         </div>
         <ConnectedPlayers players={users} info={info} />
         <div className="flex items-center flex-col w-full p-3">{children}</div>
-      </div>
-      <div className="fixed bottom-0 flex justify-center w-full bg-[#242531]">
-        <h3 className="text-white"> Vengaboys © - 2023</h3>
       </div>
     </div>
   );

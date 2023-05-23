@@ -112,7 +112,7 @@ roomController.handleSocket = (socket, io) => {
 
       // else, play the card
       setCurrentCard(user.room, card);
-      io.to(user.room).emit("played-card", { card: card });
+      io.to(user.room).emit("played-card", { card: card, vole: cardVoleVerify, user: user });
       if (card.value === "reverse") {
         if (!getDirection(user.room)) {
           setDirection(user.room, "conter-clockwise");
@@ -138,7 +138,7 @@ roomController.handleSocket = (socket, io) => {
         "cards",
         userCards.filter((c) => c.id !== card.id),
       );
-      io.to(socket.id).emit("deck", { cards: user.cards });
+      io.to(socket.id).emit("deck", { cards: user.cards, wait: user.cards.length > 1 ? true : false });
       io.to(user.room).emit("roomData", {
         room: user.room,
         users: getUsersInRoom(user.room),
@@ -149,6 +149,7 @@ roomController.handleSocket = (socket, io) => {
         io.to(user.room).emit("player-won", { user: user });
       } else if (user.cards.length === 1) {
         io.to(user.room).emit("uno", { user: user });
+        modifyUser(user.id, "uno", true);
       }
 
       if (callback) callback({ ok: true });
@@ -184,15 +185,16 @@ roomController.handleSocket = (socket, io) => {
   });
   socket.on("uno-click", ({ unoUser }) => {
     const user = getUser(socket.id);
-    if (user.id === unoUser.id) {
-      io.to(user.room).emit("uno-clicked");
-    } else {
+    if (unoUser === null) return;
+    if (unoUser.uno === false) return;
+    io.to(user.room).emit("uno-clicked");
+    modifyUser(unoUser.id, "uno", false);
+    if (user.id !== unoUser.id) {
       // draw 2 cards for this user
       unoUser = getUser(unoUser.id);
       const cards = drawMany(2);
       modifyUser(unoUser.id, "cards", [...unoUser.cards, ...cards]);
       io.to(unoUser.id).emit("deck", { cards: unoUser.cards });
-      io.to(user.room).emit("uno-clicked");
       io.to(user.room).emit("roomData", {
         room: user.room,
         users: getUsersInRoom(user.room),
