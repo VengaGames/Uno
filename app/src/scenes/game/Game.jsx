@@ -205,6 +205,7 @@ const ConnectedPlayers = ({ players, info }) => {
               {player.id === info?.playerToPlay?.id ? <WiDirectionUp className="text-red-500 rotate-90 text-xl" /> : <WiDirectionUp className="opacity-0 text-xl" />}
               <div className={`${player.id === info?.playerToPlay?.id ? "text-green-500" : "text-black"}`}>{player.name}</div>
               {player.cards && <div className="text-black font-semibold">{player.cards.length}</div>}
+              {player.wins && <div className="text-black font-semibold"> | 👑{player.wins}</div>}
             </div>
           ))}
         </div>

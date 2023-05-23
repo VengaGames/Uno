@@ -147,6 +147,7 @@ roomController.handleSocket = (socket, io) => {
       // check if the user won
       if (user.cards.length === 0) {
         io.to(user.room).emit("player-won", { user: user });
+        modifyUser(user.id, "wins", (user.wins || 0) + 1);
       } else if (user.cards.length === 1) {
         io.to(user.room).emit("uno", { user: user });
         modifyUser(user.id, "uno", true);
