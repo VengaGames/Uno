@@ -81,7 +81,7 @@ const Login = () => {
     socket.on("next-player-to-play", (user) => setGameInfo((prev) => ({ ...prev, playerToPlay: user })));
     socket.on("reverse", ({ direction }) => setGameInfo((prev) => ({ ...prev, direction: direction })));
     socket.on("set-stack", ({ stack }) => setGameInfo((prev) => ({ ...prev, stack: stack })));
-    socket.on("uno", ({ user }) => setGameInfo((prev) => ({ ...prev, uno: user })));
+    socket.on("uno", ({ userId }) => setGameInfo((prev) => ({ ...prev, uno: userId })));
     socket.on("uno-clicked", () => setGameInfo((prev) => ({ ...prev, uno: null })));
 
     socket.on("player-left", () => getCurrentPlayer(room));
@@ -147,8 +147,8 @@ const Login = () => {
     const randomLetter = String.fromCharCode(65 + Math.floor(Math.random() * 26));
     // if the user press the key of the letter, emit uno
     document.addEventListener("keydown", (e) => {
-      if (e.key.toUpperCase() === randomLetter) {
-        socket.emit("uno-click", { unoUser: gameInfo.uno });
+      if (e.key.toUpperCase() === randomLetter.toUpperCase()) {
+        socket.emit("uno-click", { unoUserId: gameInfo.uno });
       }
     });
     return (
