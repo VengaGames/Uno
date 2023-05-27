@@ -54,6 +54,7 @@ const Login = () => {
               type="text"
               name="room"
               id="room"
+              maxLength={15}
               onInvalid={(e) => {
                 e.target.setCustomValidity("Choisis une salle !");
               }}
@@ -66,6 +67,7 @@ const Login = () => {
               required
               type="text"
               name="name"
+              maxLength={15}
               onInvalid={(e) => {
                 e.target.setCustomValidity("Choisis un pseudo !");
               }}
