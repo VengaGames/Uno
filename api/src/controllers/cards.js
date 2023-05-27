@@ -186,9 +186,9 @@ roomController.handleSocket = (socket, io) => {
   });
   socket.on("uno-click", ({ unoUser }) => {
     const user = getUser(socket.id);
+    io.to(user.room).emit("uno-clicked");
     if (unoUser === null) return;
     if (unoUser.uno === false) return;
-    io.to(user.room).emit("uno-clicked");
     modifyUser(unoUser.id, "uno", false);
     if (user.id !== unoUser.id) {
       // draw 2 cards for this user
