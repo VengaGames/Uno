@@ -6,22 +6,21 @@ import API from "../../service/api";
 import useSocket from "../../hooks/socket";
 import toast from "react-hot-toast";
 import { HiArrowLeft } from "react-icons/hi";
-import { RiLoader2Fill, RiForbid2Line } from "react-icons/ri";
+import { RiLoader2Fill } from "react-icons/ri";
 import { WiDirectionUp } from "react-icons/wi";
-import { FaExchangeAlt } from "react-icons/fa";
-import { IoIosColorFilter } from "react-icons/io";
 import AskForColor from "../../components/AskForColor";
 import { VITE_ENV } from "../../config";
 import vengaicon from "../asset/vengaicon.jpeg";
+import playCardSound from "/assets/playCard.wav";
+import drawCardSound from "/assets/drawCard.wav";
+import { Card } from "./Card";
 
 const Login = () => {
   const query = new URLSearchParams(window.location.search);
   const navigate = useNavigate();
   const { socket, isConnected } = useSocket();
-  const roomData = {
-    name: query.get("name"),
-    room: query.get("room"),
-  };
+  const roomData = { name: query.get("name"), room: query.get("room") };
+
   const [deck, setDeck] = useState([]);
   const [actualCard, setActualCard] = useState(null);
   const [gameInfo, setGameInfo] = useState({ direction: "clockwise" });
@@ -106,23 +105,26 @@ const Login = () => {
     setGameInfo((prev) => ({ ...prev, playerToPlay: data }));
   };
 
-  const playCard = async (card, event) => {
+  const playCard = async (card, element) => {
     socket.emit("play-card", { card }, (res) => {
       if (!res.ok) return toast.error(res.error);
-      if (event) {
+      // play sound
+      const audio = new Audio(playCardSound);
+      audio.play();
+
+      if (element) {
         const finalPosition = document.getElementById("actualCard").getBoundingClientRect();
         const finalX = finalPosition.left;
         const finalY = finalPosition.top;
-
-        const rect = event.target.getBoundingClientRect();
+        const rect = element.getBoundingClientRect();
         const startX = rect.left;
         const startY = rect.top;
 
         const translateX = finalX - startX - 10;
         const translateY = finalY - startY - 20;
 
-        event.target.style.transform = "translate(" + translateX + "px, " + translateY + "px)";
-        event.target.style.transition = "transform 0.5s ease-in-out";
+        element.style.transform = "translate(" + translateX + "px, " + translateY + "px)";
+        element.style.transition = "transform 0.5s ease-in-out";
       }
     });
   };
@@ -130,6 +132,9 @@ const Login = () => {
   const drawCard = () => {
     socket.emit("draw-card", (res) => {
       if (!res.ok) return toast.error(res.error);
+      // play sound
+      const audio = new Audio(drawCardSound);
+      audio.play();
     });
   };
 
@@ -211,66 +216,6 @@ const ConnectedPlayers = ({ players, info }) => {
         </div>
         <WiDirectionUp className={`text-black font-semibold text-xl ${info.direction === "clockwise" ? "rotate-180" : ""}`} />
       </div>
-    </div>
-  );
-};
-
-const Card = ({ card, onClick = () => {}, type = "not-card", setIsOpen, color, setColor, classId }) => {
-  const [id, setId] = useState(null);
-  useEffect(() => {
-    if (color && id === card?.id && ["draw4", "wild"].includes(card?.value)) {
-      const newCard = { ...card, color };
-      onClick(newCard);
-      setColor(null);
-      setId(null);
-    }
-  }, [color]);
-
-  const getColor = (color) => {
-    switch (color) {
-      case "red":
-        return "bg-[#D72600]";
-      case "blue":
-        return "bg-[#0956BF]";
-      case "green":
-        return "bg-[#379711]";
-      case "yellow":
-        return "bg-[#ECD407]";
-      case "grey":
-        return "bg-gray-500";
-      default:
-        return "bg-black";
-    }
-  };
-  const getCardValue = (value) => {
-    switch (value) {
-      case "reverse":
-        return <FaExchangeAlt className="text-black -rotate-45 text-2xl" />;
-      case "skip":
-        return <RiForbid2Line className="text-black text-2xl" />;
-      case "draw2":
-        return <div className="text-black text-xl">+2</div>;
-      case "draw4":
-        return <div className="text-white text-xl">+4</div>;
-      case "wild":
-        return <IoIosColorFilter className="text-white text-2xl" />;
-      default:
-        return value;
-    }
-  };
-  return (
-    <div
-      id={classId || card.id}
-      onClick={(e) => {
-        if (card.value === "wild" || card.value === "draw4") {
-          setId(card.id);
-          setIsOpen(true);
-        } else onClick(card, e);
-      }}
-      className={`${type === "card" ? "hover:scale-150 transition ease-in-out " : ""} ${
-        type === "pioche" ? "p-3" : " w-[48px] h-[75px] "
-      } flex items-center justify-center cursor-pointer border-2 border-white rounded ${getColor(card.color)}`}>
-      {getCardValue(card.value)}
     </div>
   );
 };
