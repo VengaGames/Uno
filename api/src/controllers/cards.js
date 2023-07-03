@@ -129,7 +129,9 @@ roomController.handleSocket = (socket, io) => {
       }
 
       // go to the next player
-      const skipPlayer = card.value === "skip";
+      let skipPlayer = card.value === "skip";
+      // if reverse and only 2 players, skip the next player
+      if (card.value === "reverse" && getUsersInRoom(user.room).length === 2) skipPlayer = true;
       goToNextPlayer(user, io, skipPlayer);
 
       // remove the card from the user deck
