@@ -31,12 +31,12 @@ const Login = () => {
     if (!isConnected) return;
     // initUser
     const { name, room } = roomData;
-    const id = socket.id;
     socket.emit("join", { name, room, oldId: localStorage.getItem("oldId") }, (res) => {
       if (!res.ok) {
         toast.error(res.error);
         return (window.location.href = "https://vengahomepage.onrender.com/login?game=uno");
       }
+      localStorage.setItem("oldId", socket.id);
       getDefaultCard(room);
       getCurrentPlayer(room);
     });
@@ -86,10 +86,7 @@ const Login = () => {
 
     socket.on("player-won", ({ user }) => alert(`${user.name} a gagné !`));
 
-    return () => {
-      localStorage.setItem("oldId", id);
-      socket.emit("leave-room");
-    };
+    return () => socket.emit("leave-room");
   }, [isConnected]);
 
   const getDefaultCard = async (room) => {
