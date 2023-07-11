@@ -1,7 +1,7 @@
 /* eslint-disable indent */
 /* eslint-disable react/prop-types */
 import React, { useEffect, useState } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import API from "../../service/api";
 import useSocket from "../../hooks/socket";
 import toast from "react-hot-toast";
@@ -9,15 +9,13 @@ import { HiArrowLeft } from "react-icons/hi";
 import { RiLoader2Fill } from "react-icons/ri";
 import { WiDirectionUp } from "react-icons/wi";
 import AskForColor from "../../components/AskForColor";
-import { VITE_ENV } from "../../config";
-import vengaicon from "../asset/vengaicon.jpeg";
+import vengaIcon from "/assets/vengaicon.jpeg";
 import playCardSound from "/assets/playCard.wav";
 import drawCardSound from "/assets/drawCard.wav";
 import { Card } from "./Card";
 
 const Login = () => {
   const query = new URLSearchParams(window.location.search);
-  const navigate = useNavigate();
   const { socket, isConnected } = useSocket();
   const roomData = { name: query.get("name"), room: query.get("room") };
 
@@ -33,10 +31,10 @@ const Login = () => {
     if (!isConnected) return;
     // initUser
     const { name, room } = roomData;
-    socket.emit("join", { name, room }, (res) => {
+    socket.emit("join", { name, room, oldId: localStorage.getItem("currentId") }, (res) => {
       if (!res.ok) {
         toast.error(res.error);
-        return navigate("/");
+        return (window.location.href = "https://vengahomepage.onrender.com/login?game=uno");
       }
       getDefaultCard(room);
       getCurrentPlayer(room);
@@ -86,11 +84,7 @@ const Login = () => {
     socket.on("player-left", () => getCurrentPlayer(room));
 
     socket.on("player-won", ({ user }) => alert(`${user.name} a gagné !`));
-
-    if (VITE_ENV !== "development")
-      window.onbeforeunload = function () {
-        return "Data will be lost if you leave the page, are you sure?";
-      };
+    localStorage.setItem("currentId", socket.id);
 
     return () => socket.emit("leave-room");
   }, [isConnected]);
@@ -181,7 +175,11 @@ const Login = () => {
         <div className="flex gap-6">
           {gameInfo.stack && <div className="text-2xl">Stack : +{gameInfo.stack}</div>}
           {actualCard && <Card card={actualCard} classId="actualCard" />}
-          <Card card={{ color: "grey", value: "Pioche" }} type="pioche" onClick={() => drawCard()} />
+          <div onClick={() => drawCard()} className="flex items-center justify-center cursor-pointer border-2 border-white rounded flex-wrap w-[62px] h-[100px]">
+            <div className="bg-[#D72600] w-[50px] h-[80px] rotate-[30deg] rounded-[50px_/_80px] flex items-center justify-center">
+              <div className="-rotate-[80deg] text-[#F1CD19] font-black text-[27px] shadow-black drop-shadow-[-2px_2px_#232323]">UNO</div>
+            </div>
+          </div>
         </div>
         {deck.length === 0 && (
           <div onClick={() => socket.emit("play-again")} className="flex mt-24 text-2xl border rounded border-white text-white p-5 cursor-pointer">
@@ -223,18 +221,14 @@ const ConnectedPlayers = ({ players, info }) => {
 const Wrapper = ({ children, roomData, users, info }) => {
   return (
     <div id="game">
-      <nav className="p-3 border-gray-700 bg-[#242531]">
-        <div className="container flex flex-wrap items-center justify-center mx-auto">
-          <div className="flex flex-row justify-center items-center">
-            <img src={vengaicon} className="h-6 mr-3 sm:h-10 " alt="Venga Logo" />
-            <span className="self-center text-xl font-semibold whitespace-nowrap dark:text-white">VengaGAMES</span>
-            <h1 className="bg-[#FDFDFD] rounded-3xl text-center flex flex-row justify-center items-center ml-3 p-1 font-semibold">Room : {roomData.room}</h1>
-          </div>
-        </div>
-      </nav>
+      <div className="flex flex-row items-center justify-center bg-[#1e1f29] py-3 gap-3">
+        <img src={vengaIcon} className="h-6 sm:h-10 " alt="Venga Logo" />
+        <span className="text-xl font-semibold text-white">VengaGAMES</span>
+        <h1 className="bg-[#FDFDFD] rounded-3xl text-center p-2 font-semibold">Room : {roomData.room}</h1>
+      </div>
       <div className="w-full h-full flex flex-col items-center justify-center p-3">
         <div className="w-fit absolute left-2 top-20">
-          <NavLink to="/" end>
+          <NavLink to="https://vengahomepage.onrender.com/login?game=uno" end>
             <HiArrowLeft className="text-white transition min-w-[32px] min-h-[32px] ease-in-out delay-150 hover:-translate-y-1 hover:scale-110 duration-300" />
           </NavLink>
         </div>

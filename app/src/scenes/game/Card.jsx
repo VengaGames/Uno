@@ -5,7 +5,7 @@ import { FaExchangeAlt } from "react-icons/fa";
 import { IoIosColorFilter } from "react-icons/io";
 import { RiForbid2Line } from "react-icons/ri";
 
-export const Card = ({ card, onClick = () => {}, type = "not-card", setIsOpen, color, setColor, classId }) => {
+export const Card = ({ card, onClick = () => {}, type = "", setIsOpen, color, setColor, classId }) => {
   const [id, setId] = useState(null);
   useEffect(() => {
     if (color && id === card?.id && ["draw4", "wild"].includes(card?.value)) {
@@ -26,8 +26,6 @@ export const Card = ({ card, onClick = () => {}, type = "not-card", setIsOpen, c
         return "bg-[#379711]";
       case "yellow":
         return "bg-[#ECD407]";
-      case "grey":
-        return "bg-gray-500";
       default:
         return "bg-black";
     }
@@ -52,13 +50,13 @@ export const Card = ({ card, onClick = () => {}, type = "not-card", setIsOpen, c
   const getNumberStyle = (color) => {
     switch (color) {
       case "red":
-        return "text-[#D72600] font-bold text-2xl shadow-black drop-shadow-[1px_1px_#232323]";
+        return "text-[#D72600]";
       case "blue":
-        return "text-[#0956BF] font-bold text-2xl shadow-black drop-shadow-[1px_1px_#232323]";
+        return "text-[#0956BF]";
       case "green":
-        return "text-[#379711] font-bold text-2xl shadow-black drop-shadow-[1px_1px_#232323]";
+        return "text-[#379711]";
       case "yellow":
-        return "text-[#ECD407] font-bold text-2xl shadow-black drop-shadow-[1px_1px_#232323]";
+        return "text-[#ECD407]";
       default:
         return "text-black font-bold text-2xl";
     }
@@ -73,11 +71,11 @@ export const Card = ({ card, onClick = () => {}, type = "not-card", setIsOpen, c
           setIsOpen(true);
         } else onClick(card, document.getElementById(classId || card.id));
       }}
-      className={`${type === "card" ? "hover:scale-150 transition ease-in-out hover:z-50 " : ""} ${
-        type === "pioche" ? "p-3" : " w-[60px] h-[100px] "
-      } flex items-center justify-center cursor-pointer border-2 border-white rounded flex-wrap ${getColor(card.color)} `}>
+      className={`${
+        type === "card" ? "hover:scale-150 transition ease-in-out hover:z-50 " : ""
+      } w-[60px] h-[100px] flex items-center justify-center cursor-pointer border-2 border-white rounded flex-wrap ${getColor(card.color)} `}>
       <div className="bg-white w-[50px] h-[80px] rotate-[30deg] rounded-[50px_/_80px] flex items-center justify-center">
-        <div className="-rotate-[30deg] sha">{getCardValue(card.value, card.color)}</div>
+        <div className="-rotate-[30deg] font-bold text-2xl shadow-black drop-shadow-[1px_1px_#232323]">{getCardValue(card.value, card.color)}</div>
       </div>
     </div>
   );

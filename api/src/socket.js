@@ -11,9 +11,9 @@ exports.connectToIoServer = (server) => {
   });
 
   io.on("connection", (socket) => {
-    socket.on("join", ({ name, room }, callback) => {
+    socket.on("join", ({ name, room, oldId }, callback) => {
       try {
-        const { user } = addUser({ id: socket.id, name, room });
+        const { user } = addUser({ id: socket.id, name, room, oldId });
         if (!user) callback({ error: "User already exists", code: 400, ok: false });
 
         socket.join(user.room);

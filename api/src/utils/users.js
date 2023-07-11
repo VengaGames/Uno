@@ -1,27 +1,31 @@
 const { drawMany } = require("./cards");
 
 const users = [];
+const leftUsers = [];
 let currentPlayer = [];
 
-function addUser({ id, name, room }) {
-  name = name.trim();
-  room = room.trim();
-
-  const existingUser = users.find((user) => user.room === room && user.name === name);
-  if (existingUser) {
-    return { error: "User is taken" };
+function addUser({ id, name, room, oldId }) {
+  if (oldId) {
+    const oldUserIndex = leftUsers.findIndex((user) => user.id === oldId && user.room === room);
+    if (oldUserIndex !== -1) {
+      const oldUser = leftUsers.splice(oldUserIndex, 1)[0];
+      oldUser.id = id;
+      users.push(oldUser);
+      return { user: oldUser };
+    }
   }
 
-  const usersInThisRoom = getUsersInRoom(room);
+  name = name?.trim();
+  room = room?.trim();
+
+  if (!name || !room) return { error: "Username and room are required" };
+
+  const existingUser = users.find((user) => user.room === room && user.name === name);
+  if (existingUser) return { error: "User is taken" };
 
   const defaultDeck = drawMany(7);
 
-  if (usersInThisRoom.length === 0 || usersInThisRoom.every((user) => user.admin === false)) {
-    const user = { id, name, room, admin: true, cards: defaultDeck };
-    users.push(user);
-    return { user };
-  }
-  const user = { id, name, room, admin: false, cards: defaultDeck };
+  const user = { id, name, room, cards: defaultDeck };
   users.push(user);
 
   return { user };
@@ -39,12 +43,9 @@ function removeUser(id) {
   const index = users.findIndex((user) => user.id === id);
 
   if (index !== -1) {
-    if (users[index].admin) {
-      const usersInRoom = getUsersInRoom(users[index].room);
-      usersInRoom[1] ? (usersInRoom[1].admin = true) : null;
-    }
-
-    return users.splice(index, 1)[0];
+    const user = users.splice(index, 1)[0];
+    leftUsers.push(user);
+    return user;
   }
 }
 
