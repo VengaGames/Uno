@@ -45,6 +45,7 @@ exports.connectToIoServer = (server) => {
       try {
         const user = removeUser(socket.id);
         if (!user) return;
+        socket.leave(user.room);
 
         const usersInRoom = getUsersInRoom(user.room);
         if (usersInRoom.length === 0) {

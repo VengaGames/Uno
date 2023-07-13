@@ -1,10 +1,11 @@
 /* eslint-disable react/prop-types */
 import React from "react";
+import { AiOutlineCloseSquare } from "react-icons/ai";
 
 function AskForColor({ setColor, onclose }) {
   return (
-    <div className="flex mb-8 flex-col items-center justify-center">
-      <h2>Choose a color</h2>
+    <div className="flex mb-8 flex-col items-center justify-center absolute backdrop-blur-sm inset-0 z-[1000]">
+      <h2 className="text-white">Choose a color</h2>
       <div className="flex gap-2 flex-col">
         <div className="flex gap-2 ">
           <button
@@ -40,6 +41,13 @@ function AskForColor({ setColor, onclose }) {
           />
         </div>
       </div>
+      <button
+        className="mt-4"
+        onClick={() => {
+          onclose();
+        }}>
+        <AiOutlineCloseSquare className="text-4xl" />
+      </button>
     </div>
   );
 }
