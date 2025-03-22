@@ -5,6 +5,7 @@ export type Database = {
   user: UserTable;
   room: RoomTable;
   card: CardTable;
+  userCards: UserCardsTable;
 };
 
 type UserTable = {
@@ -43,3 +44,12 @@ type CardTable = {
 export type Card = Selectable<CardTable>;
 export type NewCard = Insertable<CardTable>;
 export type UpdateCard = Updateable<CardTable>;
+
+type UserCardsTable = {
+  userId: number;
+  cardId: number;
+};
+
+export type UserCards = Selectable<UserCardsTable>;
+export type NewUserCards = Insertable<UserCardsTable>;
+export type UpdateUserCards = Updateable<UserCardsTable>;

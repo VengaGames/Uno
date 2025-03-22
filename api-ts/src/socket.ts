@@ -17,15 +17,15 @@ export default function connectToIoServer(server: ServerType) {
   });
 
   io.on("connection", (socket: Socket<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, any>) => {
-    socket.on("join", async ({ name: userName, roomName, oldSocketId }, callback) => {
+    socket.on("join", async ({ name: userName, roomName, oldSocketId }, onError) => {
       let room: Room | undefined = await roomService.fetchRoomByName(userName);
       if (!room) {
-        return callback({ errorCode: ErrorCodes.CREATE_ROOM_FAILED, code: 500 });
+        return onError({ errorCode: ErrorCodes.CREATE_ROOM_FAILED, code: 500 });
       }
 
       const user = await userService.addUserInRoom(userName, room.id, socket.id, oldSocketId);
       if (!user) {
-        callback({ errorCode: ErrorCodes.USER_ALREADY_EXISTS, code: 400 });
+        onError({ errorCode: ErrorCodes.USER_ALREADY_EXISTS, code: 400 });
         return;
       }
 
@@ -50,9 +50,6 @@ export default function connectToIoServer(server: ServerType) {
       });
 
       io.to(socket.id).emit("deck", { cards: user.cards });
-      if (callback) {
-        callback({ ok: true })
-      }
     });
 
     require("./controllers/cards").handleSocket(socket, io);

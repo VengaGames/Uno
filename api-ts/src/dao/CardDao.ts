@@ -27,4 +27,27 @@ export default class CardDao {
       .selectAll()
       .executeTakeFirst();
   }
+
+  public async fetchAll() {
+    return await db
+      .selectFrom('card')
+      .selectAll()
+      .execute();
+  }
+
+  public async fetchUserCards(userId: number): Promise<Card[]> {
+    return await db
+      .selectFrom('card')
+      .innerJoin('userCards', 'card.id', 'userCards.cardId')
+      .select(['card.value', 'card.color', 'card.id'])
+      .where('userId', '=', userId)
+      .execute();
+  }
+
+  async insertUserCards(cardIds: number[], userId: number) {
+    return await db
+      .insertInto('userCards')
+      .values(cardIds.map(cardId => ({ cardId, userId })))
+      .execute();
+  }
 }

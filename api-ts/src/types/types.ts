@@ -1,3 +1,5 @@
+import type { Card, User } from './databaseType';
+
 export enum ErrorCodes {
   CREATE_ROOM_FAILED = 'CREATE_ROOM_FAILED',
   USER_ALREADY_EXISTS = 'USER_ALREADY_EXISTS',
@@ -32,3 +34,8 @@ export enum Way {
   CLOCKWISE = 'CLOCKWISE',
   COUNTER_CLOCKWISE = 'COUNTER_CLOCKWISE',
 }
+
+export type CardBody = Omit<Card, "id">;
+export type CardById = Record<number, CardBody>;
+
+export type UserWithCards = User & { cards: CardBody[] };
