@@ -1,7 +1,14 @@
-import { Server } from "socket.io";
+import { type DefaultEventsMap, Server, Socket } from "socket.io";
 import type { ServerType } from '@hono/node-server';
+import RoomService from './services/RoomService';
+import type { Room, User } from './types/databaseType';
+import { ErrorCodes } from './types/types';
+import UserService from './services/UserService';
 
 export default function connectToIoServer(server: ServerType) {
+  const roomService: RoomService = RoomService.instance;
+  const userService: UserService = UserService.instance;
+
   const io = new Server(server, {
     cors: {
       origin: "*",
@@ -9,31 +16,42 @@ export default function connectToIoServer(server: ServerType) {
     },
   });
 
-  io.on("connection", (socket) => {
-    socket.on("join", ({ name, room, oldId }, callback) => {
-      try {
-        const { user } = addUser({ id: socket.id, name, room, oldId });
-        if (!user) callback({ error: "User already exists", code: 400, ok: false });
+  io.on("connection", (socket: Socket<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, any>) => {
+    socket.on("join", async ({ name: userName, roomName, oldSocketId }, callback) => {
+      let room: Room | undefined = await roomService.fetchRoomByName(userName);
+      if (!room) {
+        return callback({ errorCode: ErrorCodes.CREATE_ROOM_FAILED, code: 500 });
+      }
 
-        socket.join(user.room);
+      const user = await userService.addUserInRoom(userName, room.id, socket.id, oldSocketId);
+      if (!user) {
+        callback({ errorCode: ErrorCodes.USER_ALREADY_EXISTS, code: 400 });
+        return;
+      }
 
-        const usersInRoom = getUsersInRoom(user.room);
+      socket.join(room.name);
 
-        if (usersInRoom.length === 1) {
-          const card = getCurrentCard(room);
-          socket.emit("draw-first-card", { card: card });
-          setCurrentPlayerTurn(user.id, user.room);
-          socket.emit("next-player-to-play", getCurrentPlayerTurn(user.room));
+      const usersInRoom: User[] = await userService.fetchUsersByRoomId(room.id);
+
+      // fresh new room
+      if (!room.creatorId) {
+        const updatedRoom = await roomService.initiateRoom(room.id, user.id);
+        if (updatedRoom) {
+          room = updatedRoom;
+        } else {
+          // TODO: Handle this error
+          throw new Error(`Room ${room.name} not found`);
         }
+      }
 
-        io.to(user.room).emit("roomData", {
-          room: user.room,
-          users: usersInRoom,
-        });
-        io.to(socket.id).emit("deck", { cards: user.cards });
-        if (callback) callback({ ok: true });
-      } catch (e) {
-        console.log(e);
+      io.to(room.name).emit("roomData", {
+        room: room,
+        users: usersInRoom,
+      });
+
+      io.to(socket.id).emit("deck", { cards: user.cards });
+      if (callback) {
+        callback({ ok: true })
       }
     });
 

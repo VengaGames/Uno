@@ -339,6 +339,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/better-sqlite3@npm:^7.6.12":
+  version: 7.6.12
+  resolution: "@types/better-sqlite3@npm:7.6.12"
+  dependencies:
+    "@types/node": "npm:*"
+  checksum: 10/a442231518f1a3e28e0ee6efe2581807e5cfaa88a8af4513da34e6ae303ce82f5666e8a0048a1d2738fa248b1b369ee28e59a75189ae0b43e28e44a243a2f24b
+  languageName: node
+  linkType: hard
+
 "@types/cors@npm:^2.8.12":
   version: 2.8.17
   resolution: "@types/cors@npm:2.8.17"
@@ -462,6 +471,7 @@ __metadata:
   dependencies:
     "@biomejs/biome": "npm:1.9.4"
     "@hono/node-server": "npm:^1.13.5"
+    "@types/better-sqlite3": "npm:^7.6.12"
     "@types/jsonwebtoken": "npm:^9.0.7"
     "@types/node": "npm:^20.11.17"
     better-sqlite3: "npm:^11.9.1"

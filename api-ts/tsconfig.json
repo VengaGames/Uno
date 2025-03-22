@@ -8,6 +8,7 @@
     "types": [
       "node"
     ],
+    "moduleResolution": "bundler",
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx"
   }
