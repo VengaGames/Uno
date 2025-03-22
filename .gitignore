@@ -1,9 +1,21 @@
-**/package-lock.json
-**/node_modules
-**/.env
-**/.DS_Store
-
 # Intellij
-.idea
+.idea/
 *.iml
 *.iws
+
+#types
+**node_modules
+**/.env
+**/.DS_Store
+types/dist
+node_modules
+
+# Yarn
+.yarn/*
+!.yarn/cache
+!.yarn/releases
+!.yarn/plugins
+!.yarn/sdks
+!.yarn/versions
+/.pnp.cjs
+/.pnp.loader.mjs
