@@ -23,7 +23,7 @@ export default class UserService {
   public async addUserInRoom(userName: string, roomId: number, socketId: string, oldSocketId ?: string): Promise<UserWithCards | undefined> {
     const cardById: CardById = await this.cardService.fetchCardsById();
     if (oldSocketId) {
-      const user = await this.userDao.fetchUserByRoomAndSocketId(roomId, oldSocketId);
+      const user = await this.userDao.fetchUserBySocketId(oldSocketId);
 
       if (user) {
         user.socketId = socketId;
@@ -51,5 +51,11 @@ export default class UserService {
 
   public async fetchUsersByRoomId(roomId: number): Promise<User[]> {
     return await this.userDao.fetchUsersByRoomId(roomId);
+  }
+
+  public async deleteUserBySocketId(socketId: string) {
+    const user = await this.userDao.fetchUserBySocketId(socketId);
+    await this.userDao.deleteUserBySocketId(socketId);
+    return user;
   }
 }

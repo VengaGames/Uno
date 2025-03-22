@@ -14,12 +14,11 @@ export default class UserDao {
     return this.userDao;
   }
 
-  public async fetchUserByRoomAndSocketId(roomId: number, socketId: string): Promise<User | undefined> {
+  public async fetchUserBySocketId(socketId: string): Promise<User | undefined> {
     return await db
       .selectFrom('user')
       .selectAll()
       .where('socketId', '=', socketId)
-      .where('roomId', '=', roomId)
       .executeTakeFirst();
   }
 
@@ -55,5 +54,19 @@ export default class UserDao {
       .selectAll()
       .where('roomId', '=', roomId)
       .execute();
+  }
+
+  async deleteUserBySocketId(socketId: string) {
+    return await db.transaction().execute(trx => {
+      trx
+        .deleteFrom('userCards')
+        .where('userId', '=', eb => eb.selectFrom('user').select('userId').where('socketId', '=', socketId))
+        .execute();
+
+      return trx
+        .deleteFrom('user')
+        .where('socketId', '=', socketId)
+        .execute();
+    });
   }
 }

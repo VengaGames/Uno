@@ -38,4 +38,28 @@ export default class RoomDao {
       .returningAll()
       .executeTakeFirst();
   }
+
+  async fetchRoomById(roomId: number) {
+    return await db
+      .selectFrom('room')
+      .selectAll()
+      .where('id', '=', roomId)
+      .executeTakeFirst();
+  }
+
+  async deleteRoom(roomId: number) {
+    return await db
+      .deleteFrom('room')
+      .where('id', '=', roomId)
+      .execute();
+  }
+
+  async updateCurrentTurnUserId(roomId: number, userId: number) {
+    return await db
+      .updateTable('room')
+      .set({ currentTurnUserId: userId })
+      .where('id', '=', roomId)
+      .returningAll()
+      .executeTakeFirst();
+  }
 }

@@ -55,31 +55,40 @@ export default function connectToIoServer(server: ServerType) {
     require("./controllers/cards").handleSocket(socket, io);
     require("./controllers/room").handleSocket(socket, io);
 
-    socket.on("disconnect", () => {
-      try {
-        const user = removeUser(socket.id);
-        if (!user) return;
-        socket.leave(user.room);
-
-        const usersInRoom = getUsersInRoom(user.room);
-        if (usersInRoom.length === 0) {
-          //reset all
-          setCurrentCard(user.room, null);
-          setCurrentPlayerTurn(null, user.room);
-          setStack(user.room, null);
-          setDirection(user.room, null);
-          return;
-        }
-        setCurrentPlayerTurn(usersInRoom[0].id, user.room);
-        io.to(user.room).emit("next-player-to-play", getCurrentPlayerTurn(user.room));
-
-        io.to(user.room).emit("roomData", {
-          room: user.room,
-          users: getUsersInRoom(user.room),
-        });
-      } catch (error) {
-        console.log(error);
+    socket.on("disconnect", async (reason, description) => {
+      const user = await userService.deleteUserBySocketId(socket.id);
+      if (!user) {
+        return;
       }
+      const room = await roomService.fetchRoomById(user.roomId);
+      if (!room) {
+        return;
+      }
+
+      socket.leave(room.name);
+
+      const usersInRoom = await userService.fetchUsersByRoomId(room.id);
+      if (usersInRoom.length === 0) {
+        // room is empty, delete it
+        await roomService.deleteRoomById(room.id);
+        return;
+      }
+
+      if (room.currentTurnUserId === user.id) {
+        // Change the turn to the next player
+        const nextPlayerId = await roomService.incrementAndGetNextPlayerTurn(room.id);
+
+        io.to(room.name).emit("next-player-to-play", nextPlayerId);
+      }
+
+      io.to(room.name).emit("roomData", {
+        room: room,
+        users: usersInRoom,
+      });
+    });
+
+    socket.on("error", (error) => {
+      console.error(error);
     });
   });
 };
