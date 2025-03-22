@@ -36,7 +36,12 @@ export default class RoomService {
       // TODO: Handle this error
       throw new Error('No card available');
     }
-    return await this.roomDao.initiateRoom(roomId, userId, defaultCard.id);
+    const room = await this.roomDao.initiateRoom(roomId, userId, defaultCard.id);
+    if (!room) {
+      // TODO: Handle this error
+      throw new Error('Failed to initiate room');
+    }
+    return room;
   }
 
   async fetchRoomById(roomId: number) {
@@ -56,11 +61,17 @@ export default class RoomService {
     }
     const users: User[] = await this.userService.fetchUsersByRoomId(id);
     const currentTurnUserIndex = users.findIndex(user => user.id === room.currentTurnUserId);
-    
+
     const nextUserIndex = (currentTurnUserIndex + 1) % users.length;
     const nextUser = users[nextUserIndex];
     await this.roomDao.updateCurrentTurnUserId(room.id, nextUser.id);
     return nextUser.id;
+  }
+
+  async playCard(roomId: number, id: number, cardId: number) {
+    await this.incrementAndGetNextPlayerTurn(roomId);
+    return await this.roomDao.updateCurrentCardId(roomId, cardId);
+    
   }
 }
 

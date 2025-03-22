@@ -35,5 +35,13 @@ export default class CardService {
     return (await this.cardDao.fetchAll())
       .reduce((acc: CardById, card: Card) => ({ ...acc, [card.id]: card }), {});
   }
+
+  async fetchCardById(cardId: number) {
+    return await this.cardDao.fetchCardById(cardId);
+  }
+
+  async deleteCardById(cardId: number, userId: number) {
+    return await this.cardDao.deleteCardById(cardId, userId);    
+  }
 }
 

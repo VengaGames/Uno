@@ -1,9 +1,15 @@
 import { Server } from "socket.io";
 import type { ServerType } from '@hono/node-server';
 import RoomService from './services/RoomService';
-import type { Room, User } from './types/databaseType';
-import { ErrorCodes } from './types/types';
+import type { Room } from './types/databaseType';
+import { ErrorCodeEnum } from './types/types';
 import UserService from './services/UserService';
+import jwt from 'jsonwebtoken';
+import { SECRET } from './config';
+
+const signToken = (id: number, name: string, roomId: number) => {
+  return jwt.sign({ id, name, permissions: [] }, SECRET, { expiresIn: '30d' });
+};
 
 export default function connectToIoServer(server: ServerType) {
   const roomService: RoomService = RoomService.instance;
@@ -20,36 +26,31 @@ export default function connectToIoServer(server: ServerType) {
     socket.on("join", async ({ name: userName, roomName, oldSocketId }, onError) => {
       let room: Room | undefined = await roomService.fetchRoomByName(roomName);
       if (!room) {
-        return onError({ errorCode: ErrorCodes.CREATE_ROOM_FAILED, code: 500 });
+        return onError({ errorCode: ErrorCodeEnum.CREATE_ROOM_FAILED, code: 500 });
       }
 
       const user = await userService.addUserInRoom(userName, room.id, socket.id, oldSocketId);
       if (!user) {
-        onError({ errorCode: ErrorCodes.USER_ALREADY_EXISTS, code: 400 });
+        onError({ errorCode: ErrorCodeEnum.USER_ALREADY_EXISTS, code: 400 });
         return;
       }
 
       socket.join(room.name);
 
-      const usersInRoom: User[] = await userService.fetchUsersByRoomId(room.id);
-
       // fresh new room
       if (!room.creatorId) {
-        const updatedRoom = await roomService.initiateRoom(room.id, user.id);
-        if (updatedRoom) {
-          room = updatedRoom;
-        } else {
-          // TODO: Handle this error
-          throw new Error(`Room ${room.name} not found`);
-        }
+        room = await roomService.initiateRoom(room.id, user.id);
       }
 
       io.to(room.name).emit("roomData", {
         room: room,
-        users: usersInRoom,
+        users: await userService.fetchUsersByRoomId(room.id),
       });
 
       io.to(socket.id).emit("deck", { cards: user.cards });
+
+      const token = signToken(user.id, user.userName, room.id);
+      io.to(socket.id).emit("webSessionToken", { webSessionToken: token });
     });
 
     require("./controllers/cards").handleSocket(socket, io);

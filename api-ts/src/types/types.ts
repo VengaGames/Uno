@@ -1,8 +1,13 @@
 import type { Card, User } from './databaseType';
 
-export enum ErrorCodes {
+export enum ErrorCodeEnum {
   CREATE_ROOM_FAILED = 'CREATE_ROOM_FAILED',
   USER_ALREADY_EXISTS = 'USER_ALREADY_EXISTS',
+  ROOM_NOT_FOUND = 'ROOM_NOT_FOUND',
+  USER_NOT_FOUND = 'USER_NOT_FOUND',
+  NOT_YOUR_TURN = 'NOT_YOUR_TURN',
+  CARD_NOT_FOUND = 'CARD_NOT_FOUND',
+  CARD_NOT_IN_HAND = 'CARD_NOT_IN_HAND',
 }
 
 export enum CardColors {
@@ -35,7 +40,12 @@ export enum Way {
   COUNTER_CLOCKWISE = 'COUNTER_CLOCKWISE',
 }
 
-export type CardBody = Omit<Card, "id">;
-export type CardById = Record<number, CardBody>;
+export type CardById = Record<number, Card>;
 
-export type UserWithCards = User & { cards: CardBody[] };
+export type UserWithCards = User & { cards: Card[] };
+
+export type TokenType = {
+  id: number;
+  name: string;
+  roomId: number;
+};

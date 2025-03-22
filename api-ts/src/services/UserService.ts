@@ -58,4 +58,13 @@ export default class UserService {
     await this.userDao.deleteUserBySocketId(socketId);
     return user;
   }
+
+  async fetchUserById(userId: number) {
+    const user = await this.userDao.fetchUserById(userId);
+    if (!user) {
+      return undefined;
+    }
+    const cards = await this.cardService.fetchUserCards(user.id);
+    return { ...user, cards };
+  }
 }

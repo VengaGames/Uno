@@ -1,8 +1,12 @@
 import { serve, type ServerType } from '@hono/node-server'
 import { Hono } from 'hono'
 import connectToIoServer from './socket.js';
+import type { JwtVariables } from 'hono/jwt';
 
-const app = new Hono()
+
+type Variables = JwtVariables;
+const app = new Hono<{ Variables: Variables }>();
+
 
 app.get('/', (c) => {
   return c.text('Hello Hono!')

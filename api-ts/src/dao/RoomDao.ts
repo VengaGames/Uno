@@ -44,7 +44,7 @@ export default class RoomDao {
       .selectFrom('room')
       .selectAll()
       .where('id', '=', roomId)
-      .executeTakeFirst();
+      .executeTakeFirstOrThrow();
   }
 
   async deleteRoom(roomId: number) {
@@ -58,6 +58,15 @@ export default class RoomDao {
     return await db
       .updateTable('room')
       .set({ currentTurnUserId: userId })
+      .where('id', '=', roomId)
+      .returningAll()
+      .executeTakeFirst();
+  }
+
+  async updateCurrentCardId(roomId: number, cardId: number) {
+    return await db
+      .updateTable('room')
+      .set({ currentCardId: cardId })
       .where('id', '=', roomId)
       .returningAll()
       .executeTakeFirst();

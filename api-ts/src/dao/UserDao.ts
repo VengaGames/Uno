@@ -69,4 +69,12 @@ export default class UserDao {
         .execute();
     });
   }
+
+  async fetchUserById(userId: number) {
+    return await db
+      .selectFrom('user')
+      .selectAll()
+      .where('id', '=', userId)
+      .executeTakeFirst();
+  }
 }
