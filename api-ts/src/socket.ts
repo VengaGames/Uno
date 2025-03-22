@@ -1,4 +1,4 @@
-import { type DefaultEventsMap, Server, Socket } from "socket.io";
+import { Server } from "socket.io";
 import type { ServerType } from '@hono/node-server';
 import RoomService from './services/RoomService';
 import type { Room, User } from './types/databaseType';
@@ -16,9 +16,9 @@ export default function connectToIoServer(server: ServerType) {
     },
   });
 
-  io.on("connection", (socket: Socket<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, any>) => {
+  io.on("connection", (socket) => {
     socket.on("join", async ({ name: userName, roomName, oldSocketId }, onError) => {
-      let room: Room | undefined = await roomService.fetchRoomByName(userName);
+      let room: Room | undefined = await roomService.fetchRoomByName(roomName);
       if (!room) {
         return onError({ errorCode: ErrorCodes.CREATE_ROOM_FAILED, code: 500 });
       }
@@ -55,7 +55,7 @@ export default function connectToIoServer(server: ServerType) {
     require("./controllers/cards").handleSocket(socket, io);
     require("./controllers/room").handleSocket(socket, io);
 
-    socket.on("disconnect", async (reason, description) => {
+    socket.on("disconnect", async () => {
       const user = await userService.deleteUserBySocketId(socket.id);
       if (!user) {
         return;
