@@ -1,0 +1,60 @@
+@use 'variables/index' as *;
+
+html {
+  height: 100%;
+  font-family: $base-font-family;
+  font-size: $base-font-size;
+  box-sizing: border-box;
+}
+
+body {
+  background: white;
+  margin: 0;
+  height: 100%;
+}
+
+#root {
+  height: 100%;
+}
+
+#main {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+*,
+*:before,
+*:after {
+  box-sizing: inherit;
+}
+
+a,
+button {
+  cursor: pointer;
+}
+
+hr {
+  border: 0;
+  border-top: $separator;
+}
+
+/* Remove default margin */
+body,
+h1,
+h2,
+h3,
+h4,
+p {
+  margin: 0;
+  font-weight: normal;
+}
+
+/* Remove default input search clear button */
+input[type='search']::-webkit-search-decoration,
+input[type='search']::-webkit-search-cancel-button,
+input[type='search']::-webkit-search-results-button,
+input[type='search']::-webkit-search-results-decoration {
+  -webkit-appearance: none;
+}
+
